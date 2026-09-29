@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProcessingResult (POST /api/cards/status)",
+  "type": "object",
+  "required": ["id", "cardNumber", "success", "externalCallMs", "dbWriteMs", "kafkaPublishMs", "totalMs"],
+  "properties": {
+    "id": { "type": "string" },
+    "cardNumber": { "type": "string" },
+    "success": { "type": "boolean" },
+    "externalCallMs": { "type": "integer", "minimum": 0 },
+    "dbWriteMs": { "type": "integer", "minimum": 0 },
+    "kafkaPublishMs": { "type": "integer", "minimum": 0 },
+    "totalMs": { "type": "integer", "minimum": 0 },
+    "errorMessage": { "type": ["string", "null"] }
+  }
+}
