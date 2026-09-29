@@ -1,4 +1,5 @@
 {
+  "$schema": "../api-test.schema.json",
   "suite": "Yeni API",
   "baseUrl": "https://api.example.com (istəyə görə - yoxdursa config-dəki base.url)",
   "headers": { "X-Client": "api-tests" },

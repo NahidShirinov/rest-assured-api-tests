@@ -1,4 +1,5 @@
 {
+  "$schema": "../api-test.schema.json",
   "suite": "Posts CRUD",
   "baseUrl": "https://jsonplaceholder.typicode.com",
   "variables": {
