@@ -20,15 +20,18 @@ api-test-framework/
     │   ├── engine/Placeholders.java    # ${var}, ${random.*}, ${config.*}, ${env.*}
     │   └── matchers/MatcherFactory.java# "notNull", "gt:5", "regex:..." və s.
     └── test
-        ├── java/az/apitest/tests
-        │   ├── datadriven/JsonDrivenApiTest.java  # bütün JSON-ları işlədən tək test
-        │   ├── code/PostsCodeTest.java            # klassik REST Assured nümunəsi
-        │   └── pojo/Post.java
+        ├── java/az/apitest
+        │   ├── tests/datadriven/JsonDrivenApiTest.java  # bütün JSON-ları işlədən tək test
+        │   └── examples/PostsCodeTest.java              # klassik REST Assured nümunəsi
         └── resources
-            ├── config/dev.properties, test.properties
-            ├── testdata/*.json         # <-- TESTLƏRİN BURADADIR
+            ├── config/dev.properties, test.properties   # base.url buradadır
+            ├── testdata/*.json         # <-- SƏNİN TESTLƏRİN (avtomatik işləyir)
+            ├── examples/*.json         # nümunələr (avtomatik İŞLƏMİR)
             └── schemas/*.json          # JSON schema-lar
 ```
+
+**Framework** = `src/main/java` — buna toxunmursan.
+**Sənin işin** = `config/dev.properties` içində `base.url` + `testdata/` qovluğuna JSON fayllar.
 
 ## İşlətmək
 
@@ -43,6 +46,18 @@ AUTH_TOKEN=xxx mvn test -Dauth.type=bearer
 ```
 
 Hesabat: `target/surefire-reports/index.html` və `emailable-report.html`.
+
+> `testdata/`-dan fayl silmisən və ya adını dəyişmisənsə `mvn clean test` işlət —
+> əks halda `target/` qovluğunda köhnə kopyası qalır və yenə işləyir.
+
+### Nümunələri işlətmək
+
+`examples/` qovluğundakı testlər açıq demo API-si (jsonplaceholder.typicode.com) üzərində işləyir
+və framework-ün imkanlarını göstərir:
+
+```bash
+mvn clean test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
+```
 
 ## JSON test formatı
 
@@ -104,5 +119,6 @@ Açarlar REST Assured GPath-dır: `id`, `data.items[0].name`, `size()`, `items.f
 ## Öz API-ni qoşmaq
 
 1. `config/dev.properties` içində `base.url`-i dəyiş (auth lazımdırsa `auth.type`).
-2. `testdata/_TEMPLATE.json.example`-i kopyala → `testdata/10-my-api.json`.
+2. `testdata/_TEMPLATE.json.example`-i kopyala → `testdata/10-my-api.json` (və ya `examples/` fayllarına bax).
 3. `mvn test`.
+4. Kodla test yazmaq istəsən: `src/test/java/az/apitest/tests/code/` altında class yarat və `testng.xml`-ə əlavə et.

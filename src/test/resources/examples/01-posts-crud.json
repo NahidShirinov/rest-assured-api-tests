@@ -1,5 +1,6 @@
 {
   "suite": "Posts CRUD",
+  "baseUrl": "https://jsonplaceholder.typicode.com",
   "variables": {
     "userId": 1,
     "title": "Test ${random.string}"

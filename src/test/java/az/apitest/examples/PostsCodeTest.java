@@ -1,7 +1,6 @@
-package az.apitest.tests.code;
+package az.apitest.examples;
 
 import az.apitest.core.ApiClient;
-import az.apitest.tests.pojo.Post;
 import io.restassured.response.Response;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -27,7 +26,7 @@ public class PostsCodeTest {
 
     @BeforeClass
     public void setUp() {
-        api = new ApiClient();
+        api = new ApiClient("https://jsonplaceholder.typicode.com");
     }
 
     @Test(groups = "smoke")

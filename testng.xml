@@ -5,9 +5,11 @@
             <class name="az.apitest.tests.datadriven.JsonDrivenApiTest"/>
         </classes>
     </test>
+    <!-- Kodla yazdığın testləri bura əlavə et:
     <test name="Code-based">
         <classes>
-            <class name="az.apitest.tests.code.PostsCodeTest"/>
+            <class name="az.apitest.tests.code.MyApiTest"/>
         </classes>
     </test>
+    -->
 </suite>

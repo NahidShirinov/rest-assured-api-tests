@@ -1,0 +1,17 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+  Nümunə testlər (jsonplaceholder.typicode.com demo API-si).
+  İşlətmək: mvn test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
+-->
+<suite name="Examples" verbose="1">
+    <test name="JSON-driven examples">
+        <classes>
+            <class name="az.apitest.tests.datadriven.JsonDrivenApiTest"/>
+        </classes>
+    </test>
+    <test name="Code-based examples">
+        <classes>
+            <class name="az.apitest.examples.PostsCodeTest"/>
+        </classes>
+    </test>
+</suite>

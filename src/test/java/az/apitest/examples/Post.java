@@ -1,4 +1,4 @@
-package az.apitest.tests.pojo;
+package az.apitest.examples;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
