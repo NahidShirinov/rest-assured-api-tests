@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
  *   ${config.key}      -> config faylından
  *   ${env.NAME}        -> OS environment dəyişəni
  *   ${random.uuid} ${random.int} ${random.email} ${random.string} ${timestamp}
+ *   ${random.digits:16} -> 16 rəqəmli string (kart nömrəsi, telefon və s.)
  *
  * Dəyər tam olaraq "${x}"-dirsə tipi qorunur (ədəd ədəd kimi qalır).
  */
@@ -38,6 +39,9 @@ public final class Placeholders {
                 throw new DependencyFailedException(key, unavailable);
             }
             return value;
+        }
+        if (key.startsWith("random.digits:")) {
+            return randomDigits(Integer.parseInt(key.substring("random.digits:".length())));
         }
         return switch (key) {
             case "random.uuid" -> UUID.randomUUID().toString();
@@ -112,6 +116,16 @@ public final class Placeholders {
 
     public static Object resolveValue(Object value, Map<String, Object> vars) {
         return value instanceof String s ? resolveTyped(s, vars) : value;
+    }
+
+    /** Sabit uzunluqlu rəqəm sətri (string kimi, baş sıfırlar itmir). */
+    private static String randomDigits(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int i = 0; i < length; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
     }
 
     private static String shortId() {
