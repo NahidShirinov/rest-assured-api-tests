@@ -1,0 +1,117 @@
+{
+  "$schema": "../api-test.schema.json",
+  "suite": "Card Status API",
+  "variables": {
+    "requestId": "${random.uuid}",
+    "cardNumber": "4111${random.digits:12}",
+    "batchId": "batch-${random.string}"
+  },
+  "tests": [
+    {
+      "name": "Tək kart statusunu dəyiş",
+      "description": "Xarici servis mock-u ~20% təsadüfi xəta qaytarır, ona görə success true/false ola bilər",
+      "tags": ["smoke"],
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": {
+        "id": "${requestId}",
+        "cardNumber": "${cardNumber}",
+        "requestedStatus": "BLOCKED"
+      },
+      "expect": {
+        "status": 200,
+        "maxTimeMs": 5000,
+        "schema": "schemas/card-status/processing-result.json",
+        "body": {
+          "id": "${requestId}",
+          "cardNumber": "${cardNumber}",
+          "success": "type:boolean",
+          "totalMs": "gte:0"
+        }
+      },
+      "extract": { "processedId": "id" }
+    },
+    {
+      "name": "Emal olunan yazı DB-də görünür",
+      "description": "Əvvəlki testin id-si ilə /api/cards siyahısında axtarır",
+      "tags": ["smoke"],
+      "method": "GET",
+      "path": "/api/cards",
+      "expect": {
+        "status": 200,
+        "schema": "schemas/card-status/card-status-record-list.json",
+        "body": {
+          "findAll { it.id == '${processedId}' }.size()": 1,
+          "find { it.id == '${processedId}' }.cardNumber": "${cardNumber}",
+          "find { it.id == '${processedId}' }.requestedStatus": "BLOCKED",
+          "find { it.id == '${processedId}' }.result": "oneOf:SUCCESS|FAILURE"
+        }
+      }
+    },
+    {
+      "name": "Batch: hər element emal olunur və sıra qorunur",
+      "method": "POST",
+      "path": "/api/cards/status/batch",
+      "body": [
+        { "id": "${batchId}-1", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
+        { "id": "${batchId}-2", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
+        { "id": "${batchId}-3", "cardNumber": "4111${random.digits:12}", "requestedStatus": "EXPIRED" }
+      ],
+      "expect": {
+        "status": 200,
+        "maxTimeMs": 10000,
+        "schema": "schemas/card-status/processing-result-list.json",
+        "body": {
+          "size()": 3,
+          "id": ["${batchId}-1", "${batchId}-2", "${batchId}-3"]
+        }
+      }
+    },
+    {
+      "name": "Boş batch -> boş cavab",
+      "method": "POST",
+      "path": "/api/cards/status/batch",
+      "body": [],
+      "expect": { "status": 200, "body": { "size()": 0 } }
+    },
+    {
+      "name": "Stats: total = outbox + failure",
+      "tags": ["smoke"],
+      "method": "GET",
+      "path": "/api/stats",
+      "expect": {
+        "status": 200,
+        "schema": "schemas/card-status/stats.json",
+        "body": {
+          "with { outboxCount + failureCount == total }": true,
+          "with { successRatePercent >= 0 && successRatePercent <= 100 }": true
+        }
+      }
+    },
+    {
+      "name": "Body obyekt deyil -> 400",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": "not-an-object",
+      "expect": { "status": 400, "body": { "error": "Bad Request" } }
+    },
+    {
+      "name": "GET status endpoint-i dəstəkləmir -> 405",
+      "tags": ["negative"],
+      "method": "GET",
+      "path": "/api/cards/status",
+      "expect": { "status": 405 }
+    },
+    {
+      "name": "BUG: məcburi sahələr olmadan -> 400 olmalıdır (hazırda 500)",
+      "description": "POST {} və ya {\"id\":\"x\"} 500 Internal Server Error qaytarır. Validation (@Valid + @NotBlank) əlavə olunanda enabled=true et.",
+      "enabled": false,
+      "tags": ["negative", "known-bug"],
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": {},
+      "expect": { "status": 400 }
+    }
+  ]
+}
