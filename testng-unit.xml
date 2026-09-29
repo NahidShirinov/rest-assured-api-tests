@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+  Yalnız framework unit testləri + test fayllarının yoxlanışı (API lazım deyil).
+  İşlətmək: mvn test -Dsuite.xml=testng-unit.xml
+-->
+<suite name="Framework unit tests" verbose="1">
+    <test name="Unit">
+        <classes>
+            <class name="az.apitest.unit.MatcherFactoryTest"/>
+            <class name="az.apitest.unit.PlaceholdersTest"/>
+            <class name="az.apitest.unit.DependencyChainTest"/>
+            <class name="az.apitest.unit.TestFilesValidTest"/>
+        </classes>
+    </test>
+</suite>
