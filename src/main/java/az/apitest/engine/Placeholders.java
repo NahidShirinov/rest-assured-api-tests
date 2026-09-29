@@ -33,7 +33,11 @@ public final class Placeholders {
 
     public static Object lookup(String key, Map<String, Object> vars) {
         if (vars.containsKey(key)) {
-            return vars.get(key);
+            Object value = vars.get(key);
+            if (value instanceof DependencyFailedException.Unavailable unavailable) {
+                throw new DependencyFailedException(key, unavailable);
+            }
+            return value;
         }
         return switch (key) {
             case "random.uuid" -> UUID.randomUUID().toString();

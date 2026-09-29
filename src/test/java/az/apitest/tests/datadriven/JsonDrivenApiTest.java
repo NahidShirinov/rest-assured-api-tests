@@ -1,6 +1,7 @@
 package az.apitest.tests.datadriven;
 
 import az.apitest.engine.ApiTestExecutor;
+import az.apitest.engine.DependencyFailedException;
 import az.apitest.engine.SuiteLoader;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
@@ -42,8 +43,13 @@ public class JsonDrivenApiTest {
     @Test(dataProvider = "apiCases")
     public void run(String suiteName, ApiTestCase tc, ApiTestExecutor executor) {
         if (!tc.enabled) {
+            executor.skip(tc);
             throw new SkipException("disabled: " + tc.name);
         }
-        executor.execute(tc);
+        try {
+            executor.execute(tc);
+        } catch (DependencyFailedException e) {
+            throw new SkipException(e.getMessage());
+        }
     }
 }

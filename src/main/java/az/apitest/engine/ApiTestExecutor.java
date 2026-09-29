@@ -46,10 +46,28 @@ public final class ApiTestExecutor {
     }
 
     public Response execute(ApiTestCase tc) {
-        Response response = send(tc);
-        response.then().spec(buildExpectations(tc.expect));
-        extract(tc, response);
-        return response;
+        try {
+            Response response = send(tc);
+            response.then().spec(buildExpectations(tc.expect));
+            extract(tc, response);
+            return response;
+        } catch (DependencyFailedException e) {
+            markUnavailable(tc, "keçildi (asılı olduğu test uğursuz oldu)");
+            throw e;
+        } catch (RuntimeException | AssertionError e) {
+            markUnavailable(tc, "uğursuz oldu");
+            throw e;
+        }
+    }
+
+    /** Söndürülmüş test: onun çıxarmalı olduğu dəyişənlər də yoxdur. */
+    public void skip(ApiTestCase tc) {
+        markUnavailable(tc, "söndürülüb (enabled=false)");
+    }
+
+    private void markUnavailable(ApiTestCase tc, String reason) {
+        tc.extract.keySet().forEach(name ->
+                vars.put(name, new DependencyFailedException.Unavailable(tc.name, reason)));
     }
 
     private Response send(ApiTestCase tc) {
