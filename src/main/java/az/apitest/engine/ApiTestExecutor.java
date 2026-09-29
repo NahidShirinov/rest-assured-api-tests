@@ -58,7 +58,9 @@ public final class ApiTestExecutor {
         } catch (DependencyFailedException e) {
             markUnavailable(tc, "keçildi (asılı olduğu test uğursuz oldu)");
             throw e;
-        } catch (RuntimeException | AssertionError e) {
+        } catch (Throwable e) {
+            // Throwable: REST Assured şəbəkə xətalarını (ConnectException və s.) checked olsa da
+            // Groovy vasitəsilə elan etmədən atır - onları da tutmaq lazımdır
             markUnavailable(tc, "uğursuz oldu");
             throw e;
         }

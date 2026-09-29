@@ -73,6 +73,21 @@ public class DependencyChainTest {
     }
 
     @Test
+    public void dependentTestIsSkippedWhenProducerHasConnectionError() {
+        // localhost:1-də heç nə işləmir -> dərhal "Connection refused" (checked ConnectException)
+        ApiTestSuite suite = new ApiTestSuite();
+        suite.baseUrl = "http://localhost:1";
+        ApiTestExecutor executor = new ApiTestExecutor(suite);
+        ApiTestCase create = testCase("Create", "/items", Map.of("itemId", "id"));
+        ApiTestCase get = testCase("Get", "/items/${itemId}", Map.of());
+
+        expectThrows(Exception.class, () -> executor.execute(create));
+
+        DependencyFailedException e = expectThrows(DependencyFailedException.class, () -> executor.execute(get));
+        assertTrue(e.getMessage().contains("'Create' uğursuz oldu"), e.getMessage());
+    }
+
+    @Test
     public void dependentTestIsSkippedWhenProducerIsDisabled() {
         ApiTestCase login = testCase("Login", "/login", Map.of("token", "token"));
         ApiTestCase me = testCase("Me", "/me?t=${token}", Map.of());
