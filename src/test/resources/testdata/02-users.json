@@ -1,0 +1,42 @@
+{
+  "suite": "Users",
+  "tests": [
+    {
+      "name": "İstifadəçi siyahısı",
+      "tags": ["smoke"],
+      "path": "/users",
+      "expect": {
+        "status": 200,
+        "body": {
+          "size()": 10,
+          "email": "notEmpty",
+          "[0].address.city": "Gwenborough",
+          "[0].email": "regex:^\\S+@\\S+\\.\\S+$",
+          "username": "contains:Bret"
+        }
+      },
+      "extract": { "firstUserId": "[0].id" }
+    },
+    {
+      "name": "Birinci istifadəçinin postları (query param + chaining)",
+      "path": "/posts",
+      "queryParams": { "userId": "${firstUserId}" },
+      "expect": {
+        "status": 200,
+        "body": { "size()": 10, "userId": "contains:1" }
+      }
+    },
+    {
+      "name": "Mövcud olmayan istifadəçi -> 404",
+      "tags": ["negative"],
+      "path": "/users/99999",
+      "expect": { "status": 404, "body": { "id": "isNull" } }
+    },
+    {
+      "name": "Söndürülmüş test nümunəsi",
+      "enabled": false,
+      "path": "/users/1",
+      "expect": { "status": 200 }
+    }
+  ]
+}

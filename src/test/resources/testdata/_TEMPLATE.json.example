@@ -1,0 +1,24 @@
+{
+  "suite": "Yeni API",
+  "baseUrl": "https://api.example.com (istəyə görə - yoxdursa config-dəki base.url)",
+  "headers": { "X-Client": "api-tests" },
+  "variables": { "email": "${random.email}" },
+  "tests": [
+    {
+      "name": "Login",
+      "tags": ["smoke"],
+      "method": "POST",
+      "path": "/auth/login",
+      "body": { "username": "${env.API_USER}", "password": "${env.API_PASS}" },
+      "expect": { "status": 200, "body": { "token": "notEmpty" } },
+      "extract": { "token": "token" }
+    },
+    {
+      "name": "Profil (token ilə)",
+      "method": "GET",
+      "path": "/me",
+      "headers": { "Authorization": "Bearer ${token}" },
+      "expect": { "status": 200, "maxTimeMs": 2000, "body": { "email": "regex:.+@.+" } }
+    }
+  ]
+}

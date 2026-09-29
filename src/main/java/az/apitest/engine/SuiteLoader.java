@@ -1,0 +1,100 @@
+package az.apitest.engine;
+
+import az.apitest.config.Config;
+import az.apitest.model.ApiTestCase;
+import az.apitest.model.ApiTestSuite;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * classpath-dakı testdata/ qovluğundan bütün *.json suite-ləri yükləyir.
+ *
+ * Filtrlər:
+ *   -Dsuite=posts         yalnız adında "posts" olan fayllar (vergüllə bir neçə)
+ *   -Dtags=smoke,crud     yalnız bu tag-lardan biri olan testlər
+ *   -Dtestdata.dir=...    başqa qovluq (default: testdata)
+ */
+public final class SuiteLoader {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private SuiteLoader() {
+    }
+
+    public static List<ApiTestSuite> loadAll() {
+        String dir = Config.get("testdata.dir", "testdata");
+        Set<String> suiteFilter = csv(Config.get("suite", ""));
+        Set<String> tagFilter = csv(Config.get("tags", ""));
+
+        List<ApiTestSuite> suites = new ArrayList<>();
+        for (Path file : listJsonFiles(dir)) {
+            String fileName = file.getFileName().toString();
+            if (!suiteFilter.isEmpty() && suiteFilter.stream().noneMatch(fileName::contains)) {
+                continue;
+            }
+            ApiTestSuite suite = read(file);
+            if (!tagFilter.isEmpty()) {
+                suite.tests.removeIf(tc -> tc.tags.stream().noneMatch(tagFilter::contains));
+            }
+            if (!suite.tests.isEmpty()) {
+                suites.add(suite);
+            }
+        }
+        return suites;
+    }
+
+    public static ApiTestSuite read(Path file) {
+        try {
+            ApiTestSuite suite = MAPPER.readValue(file.toFile(), ApiTestSuite.class);
+            suite.sourceFile = file.getFileName().toString();
+            if (suite.suite == null) {
+                suite.suite = suite.sourceFile.replace(".json", "");
+            }
+            for (int i = 0; i < suite.tests.size(); i++) {
+                ApiTestCase tc = suite.tests.get(i);
+                if (tc.path == null) {
+                    throw new IllegalStateException(suite.sourceFile + " -> test #" + (i + 1) + ": 'path' boşdur");
+                }
+                if (tc.name == null) {
+                    tc.name = tc.method + " " + tc.path;
+                }
+            }
+            return suite;
+        } catch (IOException e) {
+            throw new UncheckedIOException("JSON oxunmadı: " + file + " -> " + e.getMessage(), e);
+        }
+    }
+
+    private static List<Path> listJsonFiles(String dir) {
+        URL url = SuiteLoader.class.getClassLoader().getResource(dir);
+        if (url == null) {
+            throw new IllegalStateException("testdata qovluğu tapılmadı: " + dir);
+        }
+        try (Stream<Path> stream = Files.walk(Path.of(url.toURI()))) {
+            return stream.filter(p -> p.toString().endsWith(".json")).sorted().collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Set<String> csv(String value) {
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+    }
+}

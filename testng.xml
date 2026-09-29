@@ -1,0 +1,13 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="API Tests" verbose="1">
+    <test name="JSON-driven">
+        <classes>
+            <class name="az.apitest.tests.datadriven.JsonDrivenApiTest"/>
+        </classes>
+    </test>
+    <test name="Code-based">
+        <classes>
+            <class name="az.apitest.tests.code.PostsCodeTest"/>
+        </classes>
+    </test>
+</suite>

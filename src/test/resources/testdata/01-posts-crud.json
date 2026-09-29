@@ -1,0 +1,80 @@
+{
+  "suite": "Posts CRUD",
+  "variables": {
+    "userId": 1,
+    "title": "Test ${random.string}"
+  },
+  "tests": [
+    {
+      "name": "Bütün postları al",
+      "tags": ["smoke"],
+      "method": "GET",
+      "path": "/posts",
+      "expect": {
+        "status": 200,
+        "maxTimeMs": 5000,
+        "headers": { "Content-Type": "contains:application/json" },
+        "body": {
+          "size()": "gt:0",
+          "[0].id": 1,
+          "title": "notEmpty"
+        }
+      }
+    },
+    {
+      "name": "Post yarat",
+      "tags": ["smoke", "crud"],
+      "method": "POST",
+      "path": "/posts",
+      "body": {
+        "userId": "${userId}",
+        "title": "${title}",
+        "body": "Framework ilə yaradıldı"
+      },
+      "expect": {
+        "status": 201,
+        "body": {
+          "id": "notNull",
+          "userId": "${userId}",
+          "title": "${title}"
+        }
+      },
+      "extract": { "newPostId": "id" }
+    },
+    {
+      "name": "Postu ID ilə al (path param)",
+      "tags": ["crud"],
+      "method": "GET",
+      "path": "/posts/{id}",
+      "pathParams": { "id": 1 },
+      "expect": {
+        "status": 200,
+        "schema": "schemas/post-schema.json",
+        "body": { "id": 1, "userId": "type:number" }
+      }
+    },
+    {
+      "name": "Postu yenilə",
+      "tags": ["crud"],
+      "method": "PUT",
+      "path": "/posts/1",
+      "body": { "id": 1, "userId": "${userId}", "title": "Yenilənib", "body": "..." },
+      "expect": { "status": 200, "body": { "title": "Yenilənib" } }
+    },
+    {
+      "name": "Postu qismən yenilə",
+      "tags": ["crud"],
+      "method": "PATCH",
+      "path": "/posts/1",
+      "body": { "title": "Patch" },
+      "expect": { "status": 200, "body": { "title": "Patch", "id": 1 } }
+    },
+    {
+      "name": "Postu sil",
+      "tags": ["crud"],
+      "method": "DELETE",
+      "path": "/posts/1",
+      "expect": { "status": 200 }
+    }
+  ]
+}

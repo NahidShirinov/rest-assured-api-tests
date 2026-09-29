@@ -1,0 +1,114 @@
+package az.apitest.engine;
+
+import az.apitest.config.Config;
+import az.apitest.core.SpecFactory;
+import az.apitest.matchers.MatcherFactory;
+import az.apitest.model.ApiTestCase;
+import az.apitest.model.ApiTestSuite;
+import az.apitest.model.Expectation;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.http.Method;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import org.hamcrest.Matcher;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+
+/**
+ * Framework-ün mühərriki: ApiTestCase-i götürür, sorğunu göndərir,
+ * bütün gözləntiləri bir dəfəyə yoxlayır və dəyişənləri çıxarır.
+ */
+public final class ApiTestExecutor {
+
+    private final ApiTestSuite suite;
+    /** Suite boyunca paylaşılan dəyişənlər (variables + extract). */
+    private final Map<String, Object> vars = new LinkedHashMap<>();
+
+    public ApiTestExecutor(ApiTestSuite suite) {
+        this.suite = suite;
+        suite.variables.forEach((k, v) -> vars.put(k, Placeholders.resolveValue(v, vars)));
+    }
+
+    public Map<String, Object> variables() {
+        return vars;
+    }
+
+    @Override
+    public String toString() {
+        return "vars=" + vars.keySet();
+    }
+
+    public Response execute(ApiTestCase tc) {
+        Response response = send(tc);
+        response.then().spec(buildExpectations(tc.expect));
+        extract(tc, response);
+        return response;
+    }
+
+    private Response send(ApiTestCase tc) {
+        String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, vars) : Config.baseUrl();
+        RequestSpecification req = given().spec(SpecFactory.create(baseUrl));
+
+        suite.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, vars)));
+        tc.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, vars)));
+        tc.queryParams.forEach((k, v) -> req.queryParam(k, Placeholders.resolveValue(v, vars)));
+        tc.pathParams.forEach((k, v) -> req.pathParam(k, Placeholders.resolveValue(v, vars)));
+
+        if (!tc.formParams.isEmpty()) {
+            req.contentType("application/x-www-form-urlencoded");
+            tc.formParams.forEach((k, v) -> req.formParam(k, Placeholders.resolveValue(v, vars)));
+        }
+        if (tc.body != null && !tc.body.isMissingNode()) {
+            req.body(Placeholders.resolve(tc.body, vars).toString());
+        }
+
+        String path = Placeholders.resolve(tc.path, vars);
+        return req.request(Method.valueOf(tc.method.toUpperCase()), path);
+    }
+
+    @SuppressWarnings("unchecked")
+    private io.restassured.specification.ResponseSpecification buildExpectations(Expectation exp) {
+        ResponseSpecBuilder spec = new ResponseSpecBuilder();
+
+        if (exp.status != null) {
+            spec.expectStatusCode(exp.status);
+        }
+        if (exp.maxTimeMs != null) {
+            spec.expectResponseTime(lessThanOrEqualTo(exp.maxTimeMs), TimeUnit.MILLISECONDS);
+        }
+        if (exp.schema != null) {
+            spec.expectBody(matchesJsonSchemaInClasspath(exp.schema));
+        }
+        exp.headers.forEach((name, value) ->
+                spec.expectHeader(name, (Matcher<String>) MatcherFactory.fromString(Placeholders.resolve(value, vars))));
+        exp.body.forEach((path, expected) -> {
+            JsonNode resolved = Placeholders.resolve(expected, vars);
+            spec.expectBody(Placeholders.resolve(path, vars), MatcherFactory.from(resolved));
+        });
+        return spec.build();
+    }
+
+    private void extract(ApiTestCase tc, Response response) {
+        tc.extract.forEach((name, source) -> {
+            Object value;
+            if (source.startsWith("header:")) {
+                value = response.header(source.substring("header:".length()));
+            } else if (source.equals("status")) {
+                value = response.statusCode();
+            } else {
+                value = response.jsonPath().get(source);
+            }
+            if (value == null) {
+                throw new AssertionError("extract '" + name + "' üçün dəyər tapılmadı: " + source);
+            }
+            vars.put(name, value);
+        });
+    }
+}
