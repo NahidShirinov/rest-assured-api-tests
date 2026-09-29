@@ -1,5 +1,7 @@
 # API Test Framework (REST Assured + TestNG)
 
+[![Framework unit tests](https://github.com/NahidShirinov/restassured-testing/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/NahidShirinov/restassured-testing/actions/workflows/unit-tests.yml)
+
 Yeni API testi üçün **Java yazmağa ehtiyac yoxdur**: `src/test/resources/testdata/` qovluğuna JSON fayl əlavə et, `mvn test` işlət.
 Mürəkkəb məntiq lazım olanda eyni infrastrukturla klassik REST Assured testi yazmaq olar.
 
@@ -135,6 +137,11 @@ Açarlar REST Assured GPath-dır: `id`, `data.items[0].name`, `size()`, `items.f
 test fayllarının formatı). API lazım deyil. Adi `mvn test` bunları **işlətmir** — yalnız API testləri işləyir.
 Framework koduna dəyişiklik etsən və ya test JSON-u yazanda şübhən olsa, ayrıca işlət:
 `mvn test -Dsuite.xml=testng-unit.xml`
+
+GitHub-a hər push zamanı bu testlər **GitHub Actions**-da avtomatik işləyir
+(`.github/workflows/unit-tests.yml`). Nəticə README-nin yuxarısındakı nişanda və repo-nun
+**Actions** bölməsində görünür; uğursuz olsa GitHub email göndərir və test hesabatı
+`surefire-reports` adı ilə yüklənə bilər. API testləri orada işləmir — onlara `localhost:8090` lazımdır.
 
 ## Öz API-ni qoşmaq
 
