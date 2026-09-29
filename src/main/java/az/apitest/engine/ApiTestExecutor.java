@@ -11,6 +11,7 @@ import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.Method;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.hamcrest.Matcher;
 
 import java.util.LinkedHashMap;
@@ -47,8 +48,11 @@ public final class ApiTestExecutor {
 
     public Response execute(ApiTestCase tc) {
         try {
+            // Gözləntilər sorğudan ƏVVƏL qurulur: içindəki ${...} asılılıqları da
+            // sorğu göndərilməzdən öncə yoxlanır (yoxdursa, test sorğusuz skip olur)
+            ResponseSpecification expectations = buildExpectations(tc.expect);
             Response response = send(tc);
-            response.then().spec(buildExpectations(tc.expect));
+            response.then().spec(expectations);
             extract(tc, response);
             return response;
         } catch (DependencyFailedException e) {
@@ -92,7 +96,7 @@ public final class ApiTestExecutor {
     }
 
     @SuppressWarnings("unchecked")
-    private io.restassured.specification.ResponseSpecification buildExpectations(Expectation exp) {
+    private ResponseSpecification buildExpectations(Expectation exp) {
         ResponseSpecBuilder spec = new ResponseSpecBuilder();
 
         if (exp.status != null) {

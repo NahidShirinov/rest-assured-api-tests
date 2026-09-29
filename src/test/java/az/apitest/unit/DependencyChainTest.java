@@ -4,6 +4,7 @@ import az.apitest.engine.ApiTestExecutor;
 import az.apitest.engine.DependencyFailedException;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -54,6 +55,21 @@ public class DependencyChainTest {
 
         DependencyFailedException e = expectThrows(DependencyFailedException.class, () -> executor.execute(third));
         assertTrue(e.getMessage().contains("'Second' keçildi"), e.getMessage());
+    }
+
+    @Test
+    public void dependencyInExpectationsIsDetectedBeforeRequestIsSent() {
+        ApiTestCase create = testCase("Create", "/items/${doesNotExist}", Map.of("itemId", "id"));
+        // ${itemId} yalnız gözləntidədir, path-da yox
+        ApiTestCase list = testCase("List", "/items", Map.of());
+        list.expect.body.put("find { it.id == '${itemId}' }.name", TextNode.valueOf("notNull"));
+
+        ApiTestSuite suite = new ApiTestSuite();
+        suite.baseUrl = "http://localhost:1"; // heç nə işləmir: sorğu göndərilsə, ConnectException olar
+        ApiTestExecutor executor = new ApiTestExecutor(suite);
+
+        expectThrows(IllegalArgumentException.class, () -> executor.execute(create));
+        expectThrows(DependencyFailedException.class, () -> executor.execute(list));
     }
 
     @Test
