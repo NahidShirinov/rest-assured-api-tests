@@ -67,7 +67,7 @@ mvn test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
 
 Faylın əvvəlinə `"$schema": "../api-test.schema.json"` yaz — IntelliJ / VS Code sahələri
 avtomatik tamamlayır və yazı səhvlərini (`"expcet"`, `"method": "GTE"`) dərhal qırmızı göstərir.
-Bundan əlavə `mvn test` hər dəfə əvvəlcə bütün test fayllarını bu formata qarşı yoxlayır.
+Bütün test fayllarını bu formata qarşı yoxlamaq üçün: `mvn test -Dsuite.xml=testng-unit.xml`.
 
 ```json
 {
@@ -132,8 +132,9 @@ Açarlar REST Assured GPath-dır: `id`, `data.items[0].name`, `size()`, `items.f
 ## Framework testləri
 
 `src/test/java/az/apitest/unit/` — framework-ün özünü yoxlayır (matcher-lər, dəyişənlər, zəncir/skip,
-test fayllarının formatı). `mvn test` zamanı API testlərindən əvvəl işləyir. Framework koduna dəyişiklik
-etsən, əvvəlcə bunlar keçməlidir: bir matcher bug-ı bütün API testlərini yalandan "keçmiş" göstərə bilər.
+test fayllarının formatı). API lazım deyil. Adi `mvn test` bunları **işlətmir** — yalnız API testləri işləyir.
+Framework koduna dəyişiklik etsən və ya test JSON-u yazanda şübhən olsa, ayrıca işlət:
+`mvn test -Dsuite.xml=testng-unit.xml`
 
 ## Öz API-ni qoşmaq
 

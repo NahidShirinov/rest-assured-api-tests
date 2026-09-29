@@ -1,14 +1,6 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="API Tests" verbose="1">
-    <!-- Framework-ün öz testləri: API lazım deyil, saniyələr çəkir -->
-    <test name="Framework unit tests">
-        <classes>
-            <class name="az.apitest.unit.MatcherFactoryTest"/>
-            <class name="az.apitest.unit.PlaceholdersTest"/>
-            <class name="az.apitest.unit.DependencyChainTest"/>
-            <class name="az.apitest.unit.TestFilesValidTest"/>
-        </classes>
-    </test>
+    <!-- Yalnız API testləri. Framework unit testləri ayrıcadır: mvn test -Dsuite.xml=testng-unit.xml -->
     <test name="JSON-driven">
         <classes>
             <class name="az.apitest.tests.datadriven.JsonDrivenApiTest"/>
