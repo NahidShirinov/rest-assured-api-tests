@@ -47,8 +47,8 @@ AUTH_TOKEN=xxx mvn test -Dauth.type=bearer
 
 Hesabat: `target/surefire-reports/index.html` və `emailable-report.html`.
 
-> `testdata/`-dan fayl silmisən və ya adını dəyişmisənsə `mvn clean test` işlət —
-> əks halda `target/` qovluğunda köhnə kopyası qalır və yenə işləyir.
+> JSON fayllar birbaşa `src/test/resources/testdata/`-dan oxunur: fayl əlavə etdikdə, dəyişdikdə
+> və ya sildikdə növbəti `mvn test` bunu dərhal görür — `mvn clean` lazım deyil.
 
 ### Nümunələri işlətmək
 
@@ -56,7 +56,7 @@ Hesabat: `target/surefire-reports/index.html` və `emailable-report.html`.
 və framework-ün imkanlarını göstərir:
 
 ```bash
-mvn clean test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
+mvn test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
 ```
 
 ## JSON test formatı

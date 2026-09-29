@@ -19,7 +19,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * classpath-dakı testdata/ qovluğundan bütün *.json suite-ləri yükləyir.
+ * testdata/ qovluğundan bütün *.json suite-ləri yükləyir.
+ *
+ * Fayllar birbaşa src/test/resources/{dir} qovluğundan oxunur, target/-dakı kopyadan yox.
+ * Beləcə silinmiş/adı dəyişmiş fayllar dərhal yox olur (mvn clean lazım deyil)
+ * və IDE-dən işlədəndə də eyni nəticə alınır. Mənbə qovluq tapılmasa classpath-a baxılır.
  *
  * Filtrlər:
  *   -Dsuite=posts         yalnız adında "posts" olan fayllar (vergüllə bir neçə)
@@ -78,16 +82,31 @@ public final class SuiteLoader {
     }
 
     private static List<Path> listJsonFiles(String dir) {
+        return listJsonFiles(resolveDir(dir));
+    }
+
+    private static Path resolveDir(String dir) {
+        // Surefire "basedir"-i layihə kökünə qoyur; IDE-də isə iş qovluğu adətən layihə köküdür
+        Path source = Path.of(System.getProperty("basedir", "."), "src", "test", "resources", dir);
+        if (Files.isDirectory(source)) {
+            return source;
+        }
         URL url = SuiteLoader.class.getClassLoader().getResource(dir);
         if (url == null) {
-            throw new IllegalStateException("testdata qovluğu tapılmadı: " + dir);
+            throw new IllegalStateException("testdata qovluğu tapılmadı: " + source.toAbsolutePath());
         }
-        try (Stream<Path> stream = Files.walk(Path.of(url.toURI()))) {
+        try {
+            return Path.of(url.toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static List<Path> listJsonFiles(Path root) {
+        try (Stream<Path> stream = Files.walk(root)) {
             return stream.filter(p -> p.toString().endsWith(".json")).sorted().collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
         }
     }
 
