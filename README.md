@@ -25,6 +25,7 @@ api-test-framework/
         │   └── examples/PostsCodeTest.java              # klassik REST Assured nümunəsi
         └── resources
             ├── config/dev.properties, test.properties   # base.url buradadır
+            ├── api-test.schema.json    # test fayllarının formatı (IDE autocomplete)
             ├── testdata/*.json         # <-- SƏNİN TESTLƏRİN (avtomatik işləyir)
             ├── examples/*.json         # nümunələr (avtomatik İŞLƏMİR)
             └── schemas/*.json          # JSON schema-lar
@@ -35,6 +36,8 @@ api-test-framework/
 
 ## İşlətmək
 
+Card Status API (`localhost:8090`) üçün testlər: `testdata/10-card-status.json`.
+
 ```bash
 mvn test                                  # hamısı (env=dev)
 mvn test -Denv=test                       # başqa mühit (config/test.properties)
@@ -42,6 +45,7 @@ mvn test -Dbase.url=https://my-api.com    # URL-i birbaşa dəyiş
 mvn test -Dtags=smoke                     # yalnız smoke tag-lı testlər
 mvn test -Dsuite=users                    # yalnız adında "users" olan JSON fayllar
 mvn test -Dlog.all=true                   # bütün request/response-ları göstər
+mvn test -Dsuite.xml=testng-unit.xml      # yalnız framework unit testləri (API lazım deyil)
 AUTH_TOKEN=xxx mvn test -Dauth.type=bearer
 ```
 
@@ -61,8 +65,13 @@ mvn test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
 
 ## JSON test formatı
 
+Faylın əvvəlinə `"$schema": "../api-test.schema.json"` yaz — IntelliJ / VS Code sahələri
+avtomatik tamamlayır və yazı səhvlərini (`"expcet"`, `"method": "GTE"`) dərhal qırmızı göstərir.
+Bundan əlavə `mvn test` hər dəfə əvvəlcə bütün test fayllarını bu formata qarşı yoxlayır.
+
 ```json
 {
+  "$schema": "../api-test.schema.json",
   "suite": "Posts",
   "baseUrl": "https://... (istəyə görə)",
   "headers":   { "X-Client": "tests" },
@@ -94,6 +103,9 @@ mvn test -Dsuite.xml=testng-examples.xml -Dtestdata.dir=examples
 
 Bir fayldakı testlər **ardıcıl** işləyir və dəyişənləri paylaşır: `extract` ilə çıxarılan `postId` sonrakı testlərdə `${postId}` kimi istifadə olunur.
 
+Dəyişəni çıxarmalı olan test uğursuz olsa (və ya `enabled: false` olsa), ondan asılı testlər **SKIP** olur və səbəbi yazılır:
+`${postId} yoxdur, çünki 'Post yarat' uğursuz oldu - bu test keçildi`.
+
 ### `expect.body` matcher-ləri
 
 | Dəyər | Mənası |
@@ -110,11 +122,18 @@ Bir fayldakı testlər **ardıcıl** işləyir və dəyişənləri paylaşır: `
 | `"oneOf:a\|b\|c"` | dəyərlərdən biri |
 | `"not:x"` | x deyil |
 
-Açarlar REST Assured GPath-dır: `id`, `data.items[0].name`, `size()`, `items.findAll { it.active }.size()`.
+Açarlar REST Assured GPath-dır: `id`, `data.items[0].name`, `size()`, `items.findAll { it.active }.size()`,
+`find { it.id == '${myId}' }.status`. Bir neçə sahəni müqayisə etmək üçün `with { }`: `"with { a + b == total }": true`.
 
 ### Dəyişənlər
 
-`${ad}` (variables/extract), `${config.base.url}`, `${env.API_TOKEN}`, `${random.uuid}`, `${random.int}`, `${random.email}`, `${random.string}`, `${timestamp}`.
+`${ad}` (variables/extract), `${config.base.url}`, `${env.API_TOKEN}`, `${random.uuid}`, `${random.int}`, `${random.email}`, `${random.string}`, `${random.digits:16}`, `${timestamp}`.
+
+## Framework testləri
+
+`src/test/java/az/apitest/unit/` — framework-ün özünü yoxlayır (matcher-lər, dəyişənlər, zəncir/skip,
+test fayllarının formatı). `mvn test` zamanı API testlərindən əvvəl işləyir. Framework koduna dəyişiklik
+etsən, əvvəlcə bunlar keçməlidir: bir matcher bug-ı bütün API testlərini yalandan "keçmiş" göstərə bilər.
 
 ## Öz API-ni qoşmaq
 
