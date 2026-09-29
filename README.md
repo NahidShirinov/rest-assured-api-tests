@@ -1,6 +1,6 @@
 # API Test Framework (REST Assured + TestNG)
 
-[![Framework unit tests](https://github.com/NahidShirinov/restassured-testing/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/NahidShirinov/restassured-testing/actions/workflows/unit-tests.yml)
+[![CI](https://github.com/NahidShirinov/restassured-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/NahidShirinov/restassured-testing/actions/workflows/ci.yml)
 
 Yeni API testi üçün **Java yazmağa ehtiyac yoxdur**: `src/test/resources/testdata/` qovluğuna JSON fayl əlavə et, `mvn test` işlət.
 Mürəkkəb məntiq lazım olanda eyni infrastrukturla klassik REST Assured testi yazmaq olar.
@@ -138,10 +138,22 @@ test fayllarının formatı). API lazım deyil. Adi `mvn test` bunları **işlə
 Framework koduna dəyişiklik etsən və ya test JSON-u yazanda şübhən olsa, ayrıca işlət:
 `mvn test -Dsuite.xml=testng-unit.xml`
 
-GitHub-a hər push zamanı bu testlər **GitHub Actions**-da avtomatik işləyir
-(`.github/workflows/unit-tests.yml`). Nəticə README-nin yuxarısındakı nişanda və repo-nun
-**Actions** bölməsində görünür; uğursuz olsa GitHub email göndərir və test hesabatı
-`surefire-reports` adı ilə yüklənə bilər. API testləri orada işləmir — onlara `localhost:8090` lazımdır.
+## CI (GitHub Actions)
+
+`.github/workflows/ci.yml` hər push və pull request zamanı işləyir:
+
+```
+push ─► 1. Framework unit tests ─► 2. API tests
+          (API lazım deyil)          Card Status servisi Docker-də qaldırılır
+                                     (Postgres + 3 Kafka + WireMock + app),
+                                     sonra `mvn test` ona qarşı işləyir
+```
+
+- Servis kodu [card-status-pipeline-test](https://github.com/NahidShirinov/card-status-pipeline-test)
+  reposundan (`main`) götürülür. **Actions → CI → Run workflow** ilə başqa branch/tag seçmək olar.
+- API testləri yalnız unit testlər keçəndə başlayır.
+- Hesabatlar (və uğursuzluqda servis logları) **Artifacts** bölməsində: `api-test-reports`, `unit-test-reports`.
+- Nəticə README-nin yuxarısındakı nişanda görünür; uğursuz olsa GitHub email göndərir.
 
 ## Öz API-ni qoşmaq
 
