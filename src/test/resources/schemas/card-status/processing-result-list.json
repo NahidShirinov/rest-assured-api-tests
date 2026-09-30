@@ -4,16 +4,42 @@
   "type": "array",
   "items": {
     "type": "object",
-    "required": ["id", "cardNumber", "success", "externalCallMs", "dbWriteMs", "kafkaPublishMs", "totalMs"],
+    "required": [
+      "id",
+      "cardNumber",
+      "success",
+      "externalCallMs",
+      "dbWriteMs",
+      "totalMs"
+    ],
     "properties": {
-      "id": { "type": "string" },
-      "cardNumber": { "type": "string" },
-      "success": { "type": "boolean" },
-      "externalCallMs": { "type": "integer", "minimum": 0 },
-      "dbWriteMs": { "type": "integer", "minimum": 0 },
-      "kafkaPublishMs": { "type": "integer", "minimum": 0 },
-      "totalMs": { "type": "integer", "minimum": 0 },
-      "errorMessage": { "type": ["string", "null"] }
+      "id": {
+        "type": "string"
+      },
+      "cardNumber": {
+        "type": "string"
+      },
+      "success": {
+        "type": "boolean"
+      },
+      "externalCallMs": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "dbWriteMs": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "totalMs": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "errorMessage": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
     }
   }
 }
