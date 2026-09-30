@@ -38,8 +38,6 @@ api-test-framework/
 
 ## İşlətmək
 
-Card Status API (`localhost:8090`) üçün testlər: `testdata/10-card-status.json`.
-
 ```bash
 mvn test                                  # hamısı (env=dev)
 mvn test -Denv=test                       # başqa mühit (config/test.properties)
