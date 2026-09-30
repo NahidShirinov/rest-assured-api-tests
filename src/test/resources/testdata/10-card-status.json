@@ -4,6 +4,8 @@
   "variables": {
     "okId": "${random.uuid}-1",
     "failId": "${random.uuid}-5",
+    "idemId": "${random.uuid}-1",
+    "idemKey": "${random.uuid}",
     "cardNumber": "4111${random.digits:12}",
     "batchId": "batch-${random.string}"
   },
@@ -78,6 +80,37 @@
           "content.size()": 2,
           "totalElements": "gte:2"
         }
+      }
+    },
+    {
+      "name": "Idempotency-Key: ilk sorğu",
+      "method": "POST",
+      "path": "/api/cards/status",
+      "headers": { "Idempotency-Key": "${idemKey}" },
+      "body": { "id": "${idemId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
+      "expect": { "status": 200, "body": { "id": "${idemId}", "success": true } },
+      "extract": { "idemTotalMs": "totalMs", "idemCardNumber": "cardNumber" }
+    },
+    {
+      "name": "Idempotency-Key: təkrar sorğu eyni nəticəni qaytarır",
+      "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı",
+      "method": "POST",
+      "path": "/api/cards/status",
+      "headers": { "Idempotency-Key": "${idemKey}" },
+      "body": { "id": "${idemId}", "cardNumber": "${idemCardNumber}", "requestedStatus": "ACTIVE" },
+      "expect": {
+        "status": 200,
+        "body": { "id": "${idemId}", "totalMs": "${idemTotalMs}", "cardNumber": "${idemCardNumber}" }
+      }
+    },
+    {
+      "name": "Idempotency-Key: DB-də yalnız 1 qeyd var",
+      "method": "GET",
+      "path": "/api/cards",
+      "queryParams": { "size": 100, "sort": "recordId,desc" },
+      "expect": {
+        "status": 200,
+        "body": { "content.findAll { it.id == '${idemId}' }.size()": 1 }
       }
     },
     {
