@@ -2,34 +2,48 @@
   "$schema": "../api-test.schema.json",
   "suite": "Card Status API",
   "variables": {
-    "requestId": "${random.uuid}",
+    "okId": "${random.uuid}-1",
+    "failId": "${random.uuid}-5",
     "cardNumber": "4111${random.digits:12}",
     "batchId": "batch-${random.string}"
   },
   "tests": [
     {
-      "name": "Tək kart statusunu dəyiş",
-      "description": "Xarici servis mock-u ~20% təsadüfi xəta qaytarır, ona görə success true/false ola bilər",
+      "name": "Kart statusunu dəyiş: xarici servis uğurlu",
+      "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır",
       "tags": ["smoke"],
       "method": "POST",
       "path": "/api/cards/status",
-      "body": {
-        "id": "${requestId}",
-        "cardNumber": "${cardNumber}",
-        "requestedStatus": "BLOCKED"
-      },
+      "body": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
         "maxTimeMs": 5000,
         "schema": "schemas/card-status/processing-result.json",
         "body": {
-          "id": "${requestId}",
+          "id": "${okId}",
           "cardNumber": "${cardNumber}",
-          "success": "type:boolean",
+          "success": true,
+          "errorMessage": null,
           "totalMs": "gte:0"
         }
       },
       "extract": { "processedId": "id" }
+    },
+    {
+      "name": "Kart statusunu dəyiş: xarici servis 500 qaytarır",
+      "description": "WireMock: id 5 ilə bitəndə xarici servis 500 qaytarır. API yenə 200 qaytarır, amma success=false",
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": { "id": "${failId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
+      "expect": {
+        "status": 200,
+        "schema": "schemas/card-status/processing-result.json",
+        "body": {
+          "id": "${failId}",
+          "success": false,
+          "errorMessage": "contains:500"
+        }
+      }
     },
     {
       "name": "Emal olunan yazı DB-də görünür",
@@ -45,7 +59,8 @@
           "content.findAll { it.id == '${processedId}' }.size()": 1,
           "content.find { it.id == '${processedId}' }.cardNumber": "${cardNumber}",
           "content.find { it.id == '${processedId}' }.requestedStatus": "BLOCKED",
-          "content.find { it.id == '${processedId}' }.result": "oneOf:SUCCESS|FAILURE"
+          "content.find { it.id == '${processedId}' }.result": "SUCCESS",
+          "content.find { it.id == '${failId}' }.result": "FAILURE"
         }
       }
     },
@@ -72,7 +87,7 @@
       "body": [
         { "id": "${batchId}-1", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
         { "id": "${batchId}-2", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
-        { "id": "${batchId}-3", "cardNumber": "4111${random.digits:12}", "requestedStatus": "EXPIRED" }
+        { "id": "${batchId}-5", "cardNumber": "4111${random.digits:12}", "requestedStatus": "EXPIRED" }
       ],
       "expect": {
         "status": 200,
@@ -80,7 +95,8 @@
         "schema": "schemas/card-status/processing-result-list.json",
         "body": {
           "size()": 3,
-          "id": ["${batchId}-1", "${batchId}-2", "${batchId}-3"]
+          "id": ["${batchId}-1", "${batchId}-2", "${batchId}-5"],
+          "success": [true, true, false]
         }
       }
     },
