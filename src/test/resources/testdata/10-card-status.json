@@ -33,18 +33,35 @@
     },
     {
       "name": "Emal olunan yazı DB-də görünür",
-      "description": "Əvvəlki testin id-si ilə /api/cards siyahısında axtarır",
+      "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır",
       "tags": ["smoke"],
       "method": "GET",
       "path": "/api/cards",
+      "queryParams": { "size": 100, "sort": "recordId,desc" },
       "expect": {
         "status": 200,
-        "schema": "schemas/card-status/card-status-record-list.json",
+        "schema": "schemas/card-status/card-status-record-page.json",
         "body": {
-          "findAll { it.id == '${processedId}' }.size()": 1,
-          "find { it.id == '${processedId}' }.cardNumber": "${cardNumber}",
-          "find { it.id == '${processedId}' }.requestedStatus": "BLOCKED",
-          "find { it.id == '${processedId}' }.result": "oneOf:SUCCESS|FAILURE"
+          "content.findAll { it.id == '${processedId}' }.size()": 1,
+          "content.find { it.id == '${processedId}' }.cardNumber": "${cardNumber}",
+          "content.find { it.id == '${processedId}' }.requestedStatus": "BLOCKED",
+          "content.find { it.id == '${processedId}' }.result": "oneOf:SUCCESS|FAILURE"
+        }
+      }
+    },
+    {
+      "name": "Səhifələmə: size parametri işləyir",
+      "method": "GET",
+      "path": "/api/cards",
+      "queryParams": { "page": 0, "size": 2 },
+      "expect": {
+        "status": 200,
+        "schema": "schemas/card-status/card-status-record-page.json",
+        "body": {
+          "size": 2,
+          "number": 0,
+          "content.size()": 2,
+          "totalElements": "gte:2"
         }
       }
     },
