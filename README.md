@@ -138,20 +138,9 @@ Framework koduna dəyişiklik etsən və ya test JSON-u yazanda şübhən olsa, 
 
 ## CI (GitHub Actions)
 
-`.github/workflows/ci.yml` hər push və pull request zamanı işləyir:
-
-```
-push ─► 1. Framework unit tests ─► 2. API tests
-          (API lazım deyil)          Card Status servisi Docker-də qaldırılır
-                                     (Postgres + 3 Kafka + WireMock + app),
-                                     sonra `mvn test` ona qarşı işləyir
-```
-
-- Servis kodu [card-status-pipeline-test](https://github.com/NahidShirinov/card-status-pipeline-test)
-  reposundan (`main`) götürülür. **Actions → CI → Run workflow** ilə başqa branch/tag seçmək olar.
-- API testləri yalnız unit testlər keçəndə başlayır.
-- Hesabatlar (və uğursuzluqda servis logları) **Artifacts** bölməsində: `api-test-reports`, `unit-test-reports`.
-- Nəticə README-nin yuxarısındakı nişanda görünür; uğursuz olsa GitHub email göndərir.
+`.github/workflows/ci.yml` hər push və pull request zamanı framework-ün **unit testlərini** işlədir
+(API lazım deyil). Nəticə README-nin yuxarısındakı nişanda görünür; uğursuz olsa GitHub email göndərir,
+test hesabatı isə **Artifacts → `unit-test-reports`** bölməsindədir.
 
 ## Öz API-ni qoşmaq
 

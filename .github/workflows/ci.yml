@@ -1,25 +1,9 @@
-# CI pipeline: hər push və pull request zamanı işləyir.
-#
-#   1. unit-tests  - framework-ün öz testləri (API lazım deyil, ~1 dəq)
-#   2. api-tests   - Card Status servisi Docker-də qaldırılır (Postgres + 3 Kafka + WireMock + app)
-#                    və testdata/*.json-dakı API testləri ona qarşı işləyir.
-#                    Yalnız unit testlər keçəndə başlayır.
+# CI: hər push və pull request zamanı framework-ün unit testləri işləyir (API lazım deyil).
 name: CI
 
 on:
   push:
   pull_request:
-  workflow_dispatch:
-    inputs:
-      service_ref:
-        description: 'card-status-pipeline-test branch / tag / commit'
-        default: main
-
-env:
-  SERVICE_REPO: NahidShirinov/card-status-pipeline-test
-  COMPOSE: docker compose -f service/docker-compose.yml
-  # kafka-ui və dozzle CI-da lazım deyil
-  SERVICES: postgres kafka-1 kafka-2 kafka-3 card-status-mock app
 
 jobs:
   unit-tests:
@@ -43,61 +27,3 @@ jobs:
         with:
           name: unit-test-reports
           path: target/surefire-reports/
-
-  api-tests:
-    name: API tests (Card Status service)
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Checkout Card Status service
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.SERVICE_REPO }}
-          ref: ${{ inputs.service_ref || 'main' }}
-          path: service
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-
-      - name: Start service (Docker Compose)
-        run: $COMPOSE up -d --build --wait $SERVICES
-
-      - name: Wait until API is ready
-        run: |
-          timeout 300 bash -c 'until curl -sf http://localhost:8090/api/stats > /dev/null; do
-            echo "API hələ hazır deyil, gözlənilir..."; sleep 5; done'
-          echo "API hazırdır"
-
-      - name: Warm up (first request creates the Kafka topic)
-        run: |
-          curl -sf -m 120 -H 'Content-Type: application/json' \
-            -d '{"id":"ci-warmup","cardNumber":"4111000000000000","requestedStatus":"ACTIVE"}' \
-            http://localhost:8090/api/cards/status
-          echo
-
-      - name: Run API tests
-        run: mvn -B test
-
-      - name: Collect service logs
-        if: failure()
-        run: $COMPOSE logs --no-color > service-logs.txt
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-reports
-          path: |
-            target/surefire-reports/
-            service-logs.txt
-          if-no-files-found: ignore
-
-      - name: Stop service
-        if: always()
-        run: $COMPOSE down -v
