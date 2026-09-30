@@ -75,7 +75,7 @@
       "expect": { "status": 200, "body": { "size()": 0 } }
     },
     {
-      "name": "Stats: total = outbox + failure",
+      "name": "Stats: total = success + failure",
       "tags": ["smoke"],
       "method": "GET",
       "path": "/api/stats",
@@ -83,7 +83,7 @@
         "status": 200,
         "schema": "schemas/card-status/stats.json",
         "body": {
-          "with { outboxCount + failureCount == total }": true,
+          "with { successCount + failureCount == total }": true,
           "with { successRatePercent >= 0 && successRatePercent <= 100 }": true
         }
       }
