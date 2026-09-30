@@ -106,6 +106,45 @@
       }
     },
     {
+      "name": "Məcburi sahələr olmadan -> 400",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": {},
+      "expect": {
+        "status": 400,
+        "body": {
+          "error": "Validation failed",
+          "details.size()": 3,
+          "details.any { it.startsWith('id:') }": true,
+          "details.any { it.startsWith('cardNumber:') }": true,
+          "details.any { it.startsWith('requestedStatus:') }": true
+        }
+      }
+    },
+    {
+      "name": "Boş sahə -> 400",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "/api/cards/status",
+      "body": { "id": "x-1", "cardNumber": "", "requestedStatus": "ACTIVE" },
+      "expect": {
+        "status": 400,
+        "body": { "details": ["cardNumber: cardNumber must not be blank"] }
+      }
+    },
+    {
+      "name": "Batch-da səhv element -> 400",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "/api/cards/status/batch",
+      "body": [
+        { "id": "${batchId}-ok-1", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
+        { "id": "", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" }
+      ],
+      "expect": { "status": 400 }
+    },
+    {
       "name": "Body obyekt deyil -> 400",
       "tags": ["negative"],
       "method": "POST",
@@ -119,16 +158,6 @@
       "method": "GET",
       "path": "/api/cards/status",
       "expect": { "status": 405 }
-    },
-    {
-      "name": "BUG: məcburi sahələr olmadan -> 400 olmalıdır (hazırda 500)",
-      "description": "POST {} və ya {\"id\":\"x\"} 500 Internal Server Error qaytarır. Validation (@Valid + @NotBlank) əlavə olunanda enabled=true et.",
-      "enabled": false,
-      "tags": ["negative", "known-bug"],
-      "method": "POST",
-      "path": "/api/cards/status",
-      "body": {},
-      "expect": { "status": 400 }
     }
   ]
 }
