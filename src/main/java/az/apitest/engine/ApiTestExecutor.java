@@ -108,7 +108,7 @@ public final class ApiTestExecutor {
             spec.expectResponseTime(lessThanOrEqualTo(exp.maxTimeMs), TimeUnit.MILLISECONDS);
         }
         if (exp.schema != null) {
-            spec.expectBody(matchesJsonSchemaInClasspath(exp.schema));
+            spec.expectBody(matchesJsonSchemaInClasspath(Placeholders.resolve(exp.schema, vars)));
         }
         exp.headers.forEach((name, value) ->
                 spec.expectHeader(name, (Matcher<String>) MatcherFactory.fromString(Placeholders.resolve(value, vars))));
