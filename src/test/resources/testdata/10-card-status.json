@@ -2,6 +2,13 @@
   "$schema": "../api-test.schema.json",
   "suite": "Card Status API",
   "variables": {
+    "statusPath": "/api/cards/status",
+    "cardsPath": "/api/cards",
+    "batchPath": "/api/cards/status/batch",
+    "resultSchema": "schemas/card-status/processing-result.json",
+    "pageSchema": "schemas/card-status/card-status-record-page.json",
+    "latestPageSize": 100,
+    "negativeCardNumber": "4111${random.digits:12}",
     "okId": "${random.uuid}-1",
     "failId": "${random.uuid}-5",
     "idemId": "${random.uuid}-1",
@@ -15,12 +22,12 @@
       "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır",
       "tags": ["smoke"],
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "body": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
         "maxTimeMs": 5000,
-        "schema": "schemas/card-status/processing-result.json",
+        "schema": "${resultSchema}",
         "body": {
           "id": "${okId}",
           "cardNumber": "${cardNumber}",
@@ -35,11 +42,11 @@
       "name": "Kart statusunu dəyiş: xarici servis 500 qaytarır",
       "description": "WireMock: id 5 ilə bitəndə xarici servis 500 qaytarır. API yenə 200 qaytarır, amma success=false",
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "body": { "id": "${failId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
-        "schema": "schemas/card-status/processing-result.json",
+        "schema": "${resultSchema}",
         "body": {
           "id": "${failId}",
           "success": false,
@@ -52,11 +59,11 @@
       "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır",
       "tags": ["smoke"],
       "method": "GET",
-      "path": "/api/cards",
-      "queryParams": { "size": 100, "sort": "recordId,desc" },
+      "path": "${cardsPath}",
+      "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
         "status": 200,
-        "schema": "schemas/card-status/card-status-record-page.json",
+        "schema": "${pageSchema}",
         "body": {
           "content.findAll { it.id == '${processedId}' }.size()": 1,
           "content.find { it.id == '${processedId}' }.cardNumber": "${cardNumber}",
@@ -69,11 +76,11 @@
     {
       "name": "Səhifələmə: size parametri işləyir",
       "method": "GET",
-      "path": "/api/cards",
+      "path": "${cardsPath}",
       "queryParams": { "page": 0, "size": 2 },
       "expect": {
         "status": 200,
-        "schema": "schemas/card-status/card-status-record-page.json",
+        "schema": "${pageSchema}",
         "body": {
           "size": 2,
           "number": 0,
@@ -85,7 +92,7 @@
     {
       "name": "Idempotency-Key: ilk sorğu",
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
       "body": { "id": "${idemId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
       "expect": { "status": 200, "body": { "id": "${idemId}", "success": true } },
@@ -95,7 +102,7 @@
       "name": "Idempotency-Key: təkrar sorğu eyni nəticəni qaytarır",
       "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı",
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
       "body": { "id": "${idemId}", "cardNumber": "${idemCardNumber}", "requestedStatus": "ACTIVE" },
       "expect": {
@@ -106,8 +113,8 @@
     {
       "name": "Idempotency-Key: DB-də yalnız 1 qeyd var",
       "method": "GET",
-      "path": "/api/cards",
-      "queryParams": { "size": 100, "sort": "recordId,desc" },
+      "path": "${cardsPath}",
+      "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
         "status": 200,
         "body": { "content.findAll { it.id == '${idemId}' }.size()": 1 }
@@ -116,7 +123,7 @@
     {
       "name": "Batch: hər element emal olunur və sıra qorunur",
       "method": "POST",
-      "path": "/api/cards/status/batch",
+      "path": "${batchPath}",
       "body": [
         { "id": "${batchId}-1", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
         { "id": "${batchId}-2", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
@@ -136,7 +143,7 @@
     {
       "name": "Boş batch -> boş cavab",
       "method": "POST",
-      "path": "/api/cards/status/batch",
+      "path": "${batchPath}",
       "body": [],
       "expect": { "status": 200, "body": { "size()": 0 } }
     },
@@ -158,7 +165,7 @@
       "name": "Məcburi sahələr olmadan -> 400",
       "tags": ["negative"],
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "body": {},
       "expect": {
         "status": 400,
@@ -175,7 +182,7 @@
       "name": "Boş sahə -> 400",
       "tags": ["negative"],
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "body": { "id": "x-1", "cardNumber": "", "requestedStatus": "ACTIVE" },
       "expect": {
         "status": 400,
@@ -186,10 +193,10 @@
       "name": "Batch-da səhv element -> 400",
       "tags": ["negative"],
       "method": "POST",
-      "path": "/api/cards/status/batch",
+      "path": "${batchPath}",
       "body": [
-        { "id": "${batchId}-ok-1", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
-        { "id": "", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" }
+        { "id": "${batchId}-ok-1", "cardNumber": "${negativeCardNumber}", "requestedStatus": "ACTIVE" },
+        { "id": "", "cardNumber": "${negativeCardNumber}", "requestedStatus": "ACTIVE" }
       ],
       "expect": { "status": 400 }
     },
@@ -197,7 +204,7 @@
       "name": "Body obyekt deyil -> 400",
       "tags": ["negative"],
       "method": "POST",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "body": "not-an-object",
       "expect": { "status": 400, "body": { "error": "Bad Request" } }
     },
@@ -205,7 +212,7 @@
       "name": "GET status endpoint-i dəstəkləmir -> 405",
       "tags": ["negative"],
       "method": "GET",
-      "path": "/api/cards/status",
+      "path": "${statusPath}",
       "expect": { "status": 405 }
     }
   ]
