@@ -1,0 +1,82 @@
+# Framework unit testləri üçün kiçik OpenAPI spesifikasiyası (LocalApi serveri bunu təqlid edir)
+openapi: 3.0.3
+info:
+  title: Users API
+  version: "1.0"
+servers:
+  - url: /
+paths:
+  /users:
+    post:
+      summary: Create user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/{id}:
+    get:
+      summary: Get user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: verbose
+          in: query
+          required: true
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [RUNNING, DONE] }
+components:
+  schemas:
+    NewUser:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [USER, ADMIN] }
+        address:
+          type: object
+          properties:
+            city: { type: string }
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }

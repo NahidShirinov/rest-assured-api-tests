@@ -17,10 +17,13 @@ import java.util.Map;
  */
 public class Expectation {
 
-    public Integer status;
+    /** 200 və ya "${status}" (dataSets-də hər sətir öz statusunu verə bilər). */
+    public Object status;
     public Long maxTimeMs;
     /** classpath-da JSON schema faylı, məs. "schemas/post.json" */
     public String schema;
+    /** Cavabı OpenAPI spesifikasiyasına qarşı yoxla (suite-dəki "openapi" default-unu dəyişir). */
+    public Boolean openapi;
     public Map<String, String> headers = new LinkedHashMap<>();
     public Map<String, JsonNode> body = new LinkedHashMap<>();
 }

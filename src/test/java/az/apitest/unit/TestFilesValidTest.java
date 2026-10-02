@@ -20,17 +20,27 @@ public class TestFilesValidTest {
 
     private static final Path RESOURCES = Path.of(System.getProperty("basedir", "."), "src", "test", "resources");
 
+    /** Suite faylları: "_" ilə başlayan fayl/qovluqlar (_globals.json, _files/, generator qaralamaları) suite deyil. */
     @DataProvider
     public Object[][] files() throws IOException {
-        try (Stream<Path> stream = Stream.of("testdata", "examples")
+        return jsonFiles(rel -> !SuiteLoader.hasUnderscoreSegment(rel));
+    }
+
+    @DataProvider
+    public Object[][] globalsFiles() throws IOException {
+        return jsonFiles(rel -> rel.toString().equals("_globals.json"));
+    }
+
+    private static Object[][] jsonFiles(java.util.function.Predicate<Path> relativeFilter) {
+        return Stream.of("testdata", "examples")
                 .map(RESOURCES::resolve)
                 .filter(Files::isDirectory)
-                .flatMap(TestFilesValidTest::walk)) {
-            return stream.filter(p -> p.toString().endsWith(".json"))
-                    .sorted()
-                    .map(p -> new Object[]{RESOURCES.relativize(p).toString(), p})
-                    .toArray(Object[][]::new);
-        }
+                .flatMap(root -> walk(root)
+                        .filter(p -> p.toString().endsWith(".json"))
+                        .filter(p -> relativeFilter.test(root.relativize(p))))
+                .sorted()
+                .map(p -> new Object[]{RESOURCES.relativize(p).toString(), p})
+                .toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "files")
@@ -41,6 +51,12 @@ public class TestFilesValidTest {
     @Test(dataProvider = "files")
     public void isReadableByFramework(String name, Path file) {
         SuiteLoader.read(file);
+    }
+
+    @Test(dataProvider = "globalsFiles")
+    public void globalsMatchSchema(String name, Path file) throws IOException {
+        assertThat(name, Files.readString(file), matchesJsonSchemaInClasspath("api-test-globals.schema.json"));
+        SuiteLoader.readGlobals(file);
     }
 
     private static Stream<Path> walk(Path dir) {

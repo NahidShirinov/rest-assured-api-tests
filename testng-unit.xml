@@ -10,6 +10,14 @@
             <class name="az.apitest.unit.PlaceholdersTest"/>
             <class name="az.apitest.unit.DependencyChainTest"/>
             <class name="az.apitest.unit.TestFilesValidTest"/>
+            <class name="az.apitest.unit.CsvTest"/>
+            <class name="az.apitest.unit.BodyBuilderTest"/>
+            <class name="az.apitest.unit.DataAndGlobalsTest"/>
+            <class name="az.apitest.unit.FakerAndDatesTest"/>
+            <class name="az.apitest.unit.AwaitTest"/>
+            <class name="az.apitest.unit.DbCheckerTest"/>
+            <class name="az.apitest.unit.EngineFeaturesTest"/>
+            <class name="az.apitest.unit.OpenApiTestGeneratorTest"/>
         </classes>
     </test>
 </suite>

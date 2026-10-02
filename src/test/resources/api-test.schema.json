@@ -5,52 +5,176 @@
   "description": "testdata/*.json faylları üçün format. Faylın əvvəlinə \"$schema\": \"../api-test.schema.json\" yaz - IntelliJ / VS Code avtomatik tamamlama və səhv göstərəcək.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["tests"],
+  "required": [
+    "tests"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "suite": { "type": "string", "description": "Suite adı (hesabatda görünür)" },
-    "baseUrl": { "type": "string", "description": "Bu suite üçün base URL. Yoxdursa config-dəki base.url" },
-    "headers": { "$ref": "#/definitions/stringMap", "description": "Suite-dəki bütün sorğulara əlavə olunan header-lər" },
-    "variables": { "type": "object", "description": "Başlanğıc dəyişənlər: ${ad} ilə istifadə olunur" },
+    "$schema": {
+      "type": "string"
+    },
+    "suite": {
+      "type": "string",
+      "description": "Suite adı (hesabatda görünür)"
+    },
+    "baseUrl": {
+      "type": "string",
+      "description": "Bu suite üçün base URL. Yoxdursa config-dəki base.url"
+    },
+    "headers": {
+      "$ref": "#/definitions/stringMap",
+      "description": "Suite-dəki bütün sorğulara əlavə olunan header-lər"
+    },
+    "openapi": {
+      "type": "boolean",
+      "description": "Bütün testlərdə cavabı OpenAPI spesifikasiyasına qarşı yoxla (testdə expect.openapi ilə dəyişmək olar)"
+    },
+    "openapiSpec": {
+      "type": "string",
+      "description": "OpenAPI spesifikasiyası: URL və ya src/test/resources-a nisbətən fayl. Yoxdursa config-dəki openapi.spec"
+    },
+    "datasources": {
+      "type": "object",
+      "description": "Baza bağlantıları: \"db\": {\"datasource\": \"<ad>\"}",
+      "additionalProperties": {
+        "$ref": "#/definitions/datasource"
+      }
+    },
+    "variables": {
+      "type": "object",
+      "description": "Başlanğıc dəyişənlər: ${ad} ilə istifadə olunur"
+    },
     "tests": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/definitions/testCase" }
+      "items": {
+        "$ref": "#/definitions/testCase"
+      }
     }
   },
   "definitions": {
     "stringMap": {
       "type": "object",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "paramMap": {
       "type": "object",
-      "additionalProperties": { "type": ["string", "number", "boolean"] }
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      }
     },
     "testCase": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path"],
+      "required": [
+        "path"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "enabled": { "type": "boolean", "default": true },
-        "tags": { "type": "array", "items": { "type": "string" }, "description": "-Dtags=smoke ilə filtr" },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "-Dtags=smoke ilə filtr"
+        },
         "method": {
           "type": "string",
-          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "HEAD",
+            "OPTIONS"
+          ],
           "default": "GET"
         },
-        "path": { "type": "string", "description": "Məs. /api/users/{id} - {id} pathParams-dan gəlir" },
-        "headers": { "$ref": "#/definitions/stringMap" },
-        "queryParams": { "$ref": "#/definitions/paramMap" },
-        "pathParams": { "$ref": "#/definitions/paramMap" },
-        "formParams": { "$ref": "#/definitions/paramMap" },
-        "body": { "description": "Request body (istənilən JSON)" },
-        "expect": { "$ref": "#/definitions/expectation" },
+        "path": {
+          "type": "string",
+          "description": "Məs. /api/users/{id} - {id} pathParams-dan gəlir"
+        },
+        "headers": {
+          "$ref": "#/definitions/stringMap"
+        },
+        "queryParams": {
+          "$ref": "#/definitions/paramMap"
+        },
+        "pathParams": {
+          "$ref": "#/definitions/paramMap"
+        },
+        "formParams": {
+          "$ref": "#/definitions/paramMap"
+        },
+        "body": {
+          "description": "Request body (istənilən JSON)"
+        },
+        "bodyFile": {
+          "type": "string",
+          "description": "Body-ni fayldan götür (src/test/resources-a nisbətən): bodies/create-user.json"
+        },
+        "bodyOverrides": {
+          "type": "object",
+          "description": "Body-də sahələri dəyiş/əlavə et: {\"role\": \"ADMIN\", \"address.city\": \"Baku\", \"items[0].qty\": 2}"
+        },
+        "bodyRemove": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Body-dən sahələri sil: [\"email\", \"address.zip\"]"
+        },
+        "dataSets": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "minItems": 1,
+          "description": "Testi hər data sətri ilə ayrıca işlət; sətrin dəyərləri ${açar} kimi. Adda ${açar} istifadə et: \"name\": \"Validasiya: ${case}\""
+        },
+        "dataFile": {
+          "type": "string",
+          "description": "Data sətirləri CSV faylından (birinci sətir başlıq): data/users.csv"
+        },
+        "expect": {
+          "$ref": "#/definitions/expectation"
+        },
         "extract": {
           "$ref": "#/definitions/stringMap",
           "description": "{\"ad\": \"json.path\"} və ya {\"ad\": \"header:Location\"} və ya {\"ad\": \"status\"}"
+        },
+        "await": {
+          "$ref": "#/definitions/await",
+          "description": "Sorğunu + gözləntiləri şərt ödənənə qədər təkrarla (POST təkrar göndərilir!)"
+        },
+        "db": {
+          "description": "Cavabdan sonra baza yoxlaması (obyekt və ya siyahı)",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/dbCheck"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dbCheck"
+              }
+            }
+          ]
         }
       }
     },
@@ -58,13 +182,107 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
-        "maxTimeMs": { "type": "integer", "minimum": 1 },
-        "schema": { "type": "string", "description": "classpath-da JSON schema, məs. schemas/user.json" },
-        "headers": { "$ref": "#/definitions/stringMap" },
+        "status": {
+          "description": "Gözlənilən HTTP status: 200 və ya \"${status}\" (dataSets üçün)",
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 599
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$\\{[^}]+\\}$"
+            }
+          ]
+        },
+        "maxTimeMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "schema": {
+          "type": "string",
+          "description": "classpath-da JSON schema, məs. schemas/user.json"
+        },
+        "openapi": {
+          "type": "boolean",
+          "description": "Cavabı OpenAPI spesifikasiyasına qarşı yoxla"
+        },
+        "headers": {
+          "$ref": "#/definitions/stringMap"
+        },
         "body": {
           "type": "object",
           "description": "Açar = GPath (id, items[0].name, size(), find { it.id == 'x' }.name). Dəyər = gözlənən dəyər və ya matcher: notNull, isNull, notEmpty, contains:x, startsWith:x, endsWith:x, regex:..., gt:5, gte:5, lt:5, lte:5, size:3, type:string, oneOf:a|b, not:x"
+        }
+      }
+    },
+    "await": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10000
+        },
+        "intervalMs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 500
+        }
+      }
+    },
+    "datasource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "JDBC URL: jdbc:postgresql://localhost:5432/shop"
+        },
+        "user": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string",
+          "description": "Şifrəni fayla yazma: ${env.DB_PASSWORD}"
+        }
+      }
+    },
+    "dbCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "datasource": {
+          "type": "string",
+          "default": "default",
+          "description": "config: db.url (default) və ya db.<ad>.url; ya da suite \"datasources\""
+        },
+        "query": {
+          "type": "string",
+          "description": "SQL. Dəyərləri ? ilə ver: SELECT status FROM orders WHERE id = ?"
+        },
+        "params": {
+          "type": "array",
+          "description": "? yerinə qoyulan dəyərlər, ardıcıllıqla"
+        },
+        "expect": {
+          "type": "object",
+          "description": "Nəticə = sətirlərin siyahısı (sütun adları kiçik hərflə). Açar = GPath: size(), [0].status; dəyər = matcher"
+        },
+        "extract": {
+          "$ref": "#/definitions/stringMap",
+          "description": "{\"orderStatus\": \"[0].status\"}"
+        },
+        "await": {
+          "$ref": "#/definitions/await"
         }
       }
     }

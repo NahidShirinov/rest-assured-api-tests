@@ -16,6 +16,9 @@
         <rest-assured.version>5.5.6</rest-assured.version>
         <testng.version>7.11.0</testng.version>
         <jackson.version>2.19.2</jackson.version>
+        <datafaker.version>2.7.0</datafaker.version>
+        <openapi-validator.version>2.46.1</openapi-validator.version>
+        <allure.version>2.35.5</allure.version>
 
         <!-- Default suite faylı; -Dsuite.xml=... ilə dəyişmək olar -->
         <suite.xml>testng.xml</suite.xml>
@@ -47,6 +50,53 @@
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.17</version>
         </dependency>
+
+        <!-- Realistik test datası: ${faker.name.fullName}, ${faker.internet.emailAddress}, ... -->
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>${datafaker.version}</version>
+        </dependency>
+
+        <!-- "openapi": true - cavabı servisin OpenAPI spesifikasiyasına qarşı yoxlayır; test generatoru da istifadə edir -->
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>swagger-request-validator-restassured</artifactId>
+            <version>${openapi-validator.version}</version>
+        </dependency>
+
+        <!-- Allure hesabatı: mvn test && mvn allure:serve -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+
+        <!--
+          DB yoxlaması ("db": {...}) üçün JDBC driver-ləri. Bazanızın driver-i yoxdursa buraya əlavə edin
+          (Oracle: com.oracle.database.jdbc:ojdbc11, MSSQL: com.microsoft.sqlserver:mssql-jdbc).
+        -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>26.7.0</version>
+        </dependency>
+        <!-- In-memory baza: framework-ün DB testləri və examples/ üçün -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.5.252</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -64,6 +114,26 @@
                     <suiteXmlFiles>
                         <suiteXmlFile>${suite.xml}</suiteXmlFile>
                     </suiteXmlFiles>
+                </configuration>
+            </plugin>
+            <!-- OpenAPI-dən test qaralaması: mvn -q compile exec:java -Dopenapi=<URL və ya fayl> [-Dname=<ad>] -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.4</version>
+                <configuration>
+                    <mainClass>az.apitest.tools.OpenApiTestGenerator</mainClass>
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+            </plugin>
+            <!-- Allure hesabatı: mvn allure:serve (brauzerdə açır) və ya mvn allure:report (target/site/allure-maven-plugin) -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.18.0</version>
+                <configuration>
+                    <reportVersion>2.46.1</reportVersion>
+                    <resultsDirectory>allure-results</resultsDirectory>
                 </configuration>
             </plugin>
         </plugins>
