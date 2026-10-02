@@ -1,0 +1,5 @@
+{
+  "id": "${random.uuid}-1",
+  "cardNumber": "4111${random.digits:12}",
+  "requestedStatus": "ACTIVE"
+}

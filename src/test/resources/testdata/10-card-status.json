@@ -23,7 +23,8 @@
       "tags": ["smoke"],
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
         "maxTimeMs": 5000,
@@ -43,7 +44,8 @@
       "description": "WireMock: id 5 ilə bitəndə xarici servis 500 qaytarır. API yenə 200 qaytarır, amma success=false",
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "${failId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${failId}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
         "schema": "${resultSchema}",
@@ -94,7 +96,8 @@
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
-      "body": { "id": "${idemId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${idemId}" },
       "expect": { "status": 200, "body": { "id": "${idemId}", "success": true } },
       "extract": { "idemTotalMs": "totalMs", "idemCardNumber": "cardNumber" }
     },
@@ -104,7 +107,8 @@
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
-      "body": { "id": "${idemId}", "cardNumber": "${idemCardNumber}", "requestedStatus": "ACTIVE" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${idemId}", "cardNumber": "${idemCardNumber}" },
       "expect": {
         "status": 200,
         "body": { "id": "${idemId}", "totalMs": "${idemTotalMs}", "cardNumber": "${idemCardNumber}" }
