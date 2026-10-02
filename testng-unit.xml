@@ -16,6 +16,7 @@
             <class name="az.apitest.unit.FakerAndDatesTest"/>
             <class name="az.apitest.unit.AwaitTest"/>
             <class name="az.apitest.unit.DbCheckerTest"/>
+            <class name="az.apitest.unit.EngineFeaturesTest"/>
             <class name="az.apitest.unit.OpenApiTestGeneratorTest"/>
         </classes>
     </test>
