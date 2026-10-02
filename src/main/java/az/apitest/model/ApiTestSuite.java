@@ -32,6 +32,9 @@ public class ApiTestSuite {
     /** OpenAPI spesifikasiyası (URL və ya fayl). Yoxdursa config-dəki openapi.spec. */
     public String openapiSpec;
 
+    /** Suite-in baza bağlantıları: "db": {"datasource": "<ad>"} ilə istifadə olunur. */
+    public Map<String, DataSource> datasources = new LinkedHashMap<>();
+
     public List<ApiTestCase> tests = new ArrayList<>();
 
     /** Hansı fayldan yüklənib (loader doldurur). */

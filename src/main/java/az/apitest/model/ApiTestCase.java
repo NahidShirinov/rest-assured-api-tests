@@ -1,5 +1,6 @@
 package az.apitest.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
@@ -40,6 +41,10 @@ public class ApiTestCase {
 
     /** Sorğunu + gözləntiləri şərt ödənənə qədər təkrarla (GET üçün; POST təkrar göndərilir!). */
     public AwaitConfig await;
+
+    /** Cavabdan sonra baza yoxlamaları (tək obyekt və ya siyahı). */
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    public List<DbCheck> db = new ArrayList<>();
 
     public Expectation expect = new Expectation();
 

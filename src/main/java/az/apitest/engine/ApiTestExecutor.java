@@ -5,6 +5,7 @@ import az.apitest.core.SpecFactory;
 import az.apitest.matchers.MatcherFactory;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
+import az.apitest.model.DbCheck;
 import az.apitest.model.Expectation;
 import com.atlassian.oai.validator.report.ValidationReport;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -68,6 +69,9 @@ public final class ApiTestExecutor {
                 return r;
             });
             extract(tc, response);
+            for (DbCheck check : tc.db) {
+                DbChecker.check(check, suite, scope(tc), vars);
+            }
             return response;
         } catch (DependencyFailedException e) {
             markUnavailable(tc, "keçildi (asılı olduğu test uğursuz oldu)");

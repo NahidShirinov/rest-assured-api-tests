@@ -15,6 +15,7 @@
             <class name="az.apitest.unit.DataAndGlobalsTest"/>
             <class name="az.apitest.unit.FakerAndDatesTest"/>
             <class name="az.apitest.unit.AwaitTest"/>
+            <class name="az.apitest.unit.DbCheckerTest"/>
         </classes>
     </test>
 </suite>
