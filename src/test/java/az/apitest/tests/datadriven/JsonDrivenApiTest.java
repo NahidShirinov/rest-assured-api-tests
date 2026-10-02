@@ -5,14 +5,19 @@ import az.apitest.engine.DependencyFailedException;
 import az.apitest.engine.SuiteLoader;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.Label;
+import io.qameta.allure.model.Parameter;
 import org.testng.ITestResult;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * testdata/*.json fayllarındakı BÜTÜN testləri işlədir.
@@ -42,6 +47,7 @@ public class JsonDrivenApiTest {
 
     @Test(dataProvider = "apiCases")
     public void run(String suiteName, ApiTestCase tc, ApiTestExecutor executor) {
+        describeForAllure(suiteName, tc);
         if (!tc.enabled) {
             executor.skip(tc);
             throw new SkipException("disabled: " + tc.name);
@@ -51,5 +57,24 @@ public class JsonDrivenApiTest {
         } catch (DependencyFailedException e) {
             throw new SkipException(e.getMessage());
         }
+    }
+
+    /** Allure hesabatında: test adı, suite qrupu, tag-lər, data sətri parametr kimi; tarixçə üçün sabit id. */
+    private static void describeForAllure(String suiteName, ApiTestCase tc) {
+        String id = UUID.nameUUIDFromBytes((suiteName + "::" + tc.name).getBytes(StandardCharsets.UTF_8)).toString();
+        Allure.getLifecycle().updateTestCase(result -> {
+            result.setName(tc.name);
+            result.setFullName(suiteName + " :: " + tc.name);
+            result.setHistoryId(id);
+            result.setTestCaseId(id);
+            result.setDescription((tc.description == null ? "" : tc.description + "\n\n") + tc.method + " " + tc.path);
+            List<Parameter> parameters = new ArrayList<>();
+            tc.data.forEach((k, v) -> parameters.add(new Parameter().setName(k).setValue(String.valueOf(v))));
+            result.setParameters(parameters);
+            // ağac: TestNG suite -> JSON suite adı -> test (Java sinif adı səviyyəsi lazımsızdır)
+            result.getLabels().removeIf(label -> "suite".equals(label.getName()) || "subSuite".equals(label.getName()));
+            result.getLabels().add(new Label().setName("suite").setValue(suiteName));
+            tc.tags.forEach(tag -> result.getLabels().add(new Label().setName("tag").setValue(tag)));
+        });
     }
 }

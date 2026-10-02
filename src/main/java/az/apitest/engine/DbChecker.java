@@ -8,6 +8,7 @@ import az.apitest.model.DbCheck;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.qameta.allure.Allure;
 import io.restassured.path.json.JsonPath;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -58,6 +59,8 @@ public final class DbChecker {
         JsonPath result = Await.until(check.await, () -> {
             List<Map<String, Object>> rows = query(connection, sql, params);
             String json = toJson(rows);
+            Allure.addAttachment("DB: " + check.datasource, "text/plain",
+                    sql + "\nparams: " + params + "\n\n" + json);
             JsonPath jsonPath = new JsonPath(json);
             assertRows(sql, params, json, jsonPath, matchers);
             return jsonPath;

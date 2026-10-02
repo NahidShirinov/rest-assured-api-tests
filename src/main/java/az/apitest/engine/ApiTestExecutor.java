@@ -9,6 +9,7 @@ import az.apitest.model.DbCheck;
 import az.apitest.model.Expectation;
 import com.atlassian.oai.validator.report.ValidationReport;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.Method;
 import io.restassured.response.Response;
@@ -121,7 +122,7 @@ public final class ApiTestExecutor {
     private Response send(ApiTestCase tc, Map<String, Object> scope, JsonNode body,
                           AtomicReference<ValidationReport> openApiReport, String openApiSpec) {
         String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, scope) : Config.baseUrl();
-        RequestSpecification req = given().spec(SpecFactory.create(baseUrl));
+        RequestSpecification req = given().spec(SpecFactory.create(baseUrl)).filter(new AllureRestAssured());
         if (openApiReport != null) {
             req.filter(OpenApiValidation.filter(openApiSpec, openApiReport));
         }

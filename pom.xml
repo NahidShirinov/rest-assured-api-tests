@@ -18,6 +18,7 @@
         <jackson.version>2.19.2</jackson.version>
         <datafaker.version>2.7.0</datafaker.version>
         <openapi-validator.version>2.46.1</openapi-validator.version>
+        <allure.version>2.35.5</allure.version>
 
         <!-- Default suite faylı; -Dsuite.xml=... ilə dəyişmək olar -->
         <suite.xml>testng.xml</suite.xml>
@@ -64,6 +65,18 @@
             <version>${openapi-validator.version}</version>
         </dependency>
 
+        <!-- Allure hesabatı: mvn test && mvn allure:serve -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+
         <!--
           DB yoxlaması ("db": {...}) üçün JDBC driver-ləri. Bazanızın driver-i yoxdursa buraya əlavə edin
           (Oracle: com.oracle.database.jdbc:ojdbc11, MSSQL: com.microsoft.sqlserver:mssql-jdbc).
@@ -101,6 +114,16 @@
                     <suiteXmlFiles>
                         <suiteXmlFile>${suite.xml}</suiteXmlFile>
                     </suiteXmlFiles>
+                </configuration>
+            </plugin>
+            <!-- Allure hesabatı: mvn allure:serve (brauzerdə açır) və ya mvn allure:report (target/site/allure-maven-plugin) -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.18.0</version>
+                <configuration>
+                    <reportVersion>2.46.1</reportVersion>
+                    <resultsDirectory>allure-results</resultsDirectory>
                 </configuration>
             </plugin>
         </plugins>
