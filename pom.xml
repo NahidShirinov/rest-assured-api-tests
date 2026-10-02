@@ -116,6 +116,16 @@
                     </suiteXmlFiles>
                 </configuration>
             </plugin>
+            <!-- OpenAPI-dən test qaralaması: mvn -q compile exec:java -Dopenapi=<URL və ya fayl> [-Dname=<ad>] -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.4</version>
+                <configuration>
+                    <mainClass>az.apitest.tools.OpenApiTestGenerator</mainClass>
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+            </plugin>
             <!-- Allure hesabatı: mvn allure:serve (brauzerdə açır) və ya mvn allure:report (target/site/allure-maven-plugin) -->
             <plugin>
                 <groupId>io.qameta.allure</groupId>
