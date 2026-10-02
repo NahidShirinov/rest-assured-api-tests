@@ -1,0 +1,7 @@
+{
+  "name": "${faker.dog.name}",
+  "photoUrls": ["https://example.com/${random.string}.png"],
+  "status": "available",
+  "category": { "id": 1, "name": "Dogs" },
+  "tags": [ { "id": 1, "name": "friendly" } ]
+}

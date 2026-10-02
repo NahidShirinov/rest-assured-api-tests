@@ -1,0 +1,43 @@
+{
+  "$schema": "../api-test.schema.json",
+  "suite": "Petstore: OpenAPI, bodyFile, Faker, dataFile",
+  "baseUrl": "${petstore}",
+  "openapi": true,
+  "openapiSpec": "https://petstore3.swagger.io/api/v3/openapi.json",
+  "tests": [
+    {
+      "name": "Heyvan yarat (bodyFile + Faker + override)",
+      "description": "Body _files/new-pet.json-dan gəlir, ad Faker ilə yaranır; cavab OpenAPI spesifikasiyasına qarşı yoxlanılır",
+      "tags": ["smoke"],
+      "method": "POST",
+      "path": "/pet",
+      "bodyFile": "examples/_files/new-pet.json",
+      "bodyOverrides": { "id": "${random.int}", "tags[0].name": "created-by-tests" },
+      "expect": {
+        "status": 200,
+        "body": { "id": "notNull", "status": "available", "tags[0].name": "created-by-tests" }
+      },
+      "extract": { "petId": "id", "petName": "name" }
+    },
+    {
+      "name": "Yaradılan heyvanı oxu",
+      "path": "/pet/{id}",
+      "pathParams": { "id": "${petId}" },
+      "expect": { "status": 200, "body": { "name": "${petName}" } }
+    },
+    {
+      "name": "Status üzrə axtarış: ${status}",
+      "description": "dataFile: hər CSV sətri ayrıca test",
+      "path": "/pet/findByStatus",
+      "queryParams": { "status": "${status}" },
+      "dataFile": "examples/_files/pet-statuses.csv",
+      "expect": { "status": 200, "body": { "status": "type:array" } }
+    },
+    {
+      "name": "Bu endpoint 400-ü sənədləşdirir, amma body qaytarır (OpenAPI uyğunsuzluğu)",
+      "description": "Real spesifikasiya pozuntusu: openapi yoxlaması bunu tutur, ona görə burada söndürülüb",
+      "path": "/pet/findByStatus",
+      "expect": { "status": 400, "openapi": false }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "../api-test.schema.json",
+  "suite": "DB yoxlaması (H2 demo bazası)",
+  "baseUrl": "https://jsonplaceholder.typicode.com",
+  "datasources": {
+    "demo": {
+      "url": "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'classpath:examples/_files/demo-db.sql'",
+      "user": "sa",
+      "password": ""
+    }
+  },
+  "tests": [
+    {
+      "name": "API-dəki istifadəçi bazadakı ilə eynidir",
+      "description": "Real layihədə datasource config-də olur: db.url / db.user / db.password (şifrə ENV ilə)",
+      "path": "/users/{id}",
+      "pathParams": { "id": 1 },
+      "expect": { "status": 200 },
+      "extract": { "apiName": "name", "apiEmail": "email" },
+      "db": {
+        "datasource": "demo",
+        "query": "SELECT name, email FROM users WHERE id = ?",
+        "params": [1],
+        "expect": { "size()": 1, "[0].name": "${apiName}", "[0].email": "${apiEmail}" },
+        "await": { "timeoutMs": 3000, "intervalMs": 200 }
+      }
+    },
+    {
+      "name": "Validasiya nümunəsi: ${case}",
+      "description": "dataSets: hər sətir öz gözlənilən statusu ilə",
+      "path": "/users/${id}",
+      "expect": { "status": "${status}" },
+      "dataSets": [
+        { "case": "mövcud istifadəçi", "id": 1, "status": 200 },
+        { "case": "olmayan istifadəçi", "id": 99999, "status": 404 }
+      ]
+    }
+  ]
+}
