@@ -1,0 +1,6 @@
+{
+  "$schema": "../api-test-globals.schema.json",
+  "headers": {
+    "X-Client": "api-tests"
+  }
+}

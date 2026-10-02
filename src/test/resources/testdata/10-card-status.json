@@ -1,6 +1,7 @@
 {
   "$schema": "../api-test.schema.json",
   "suite": "Card Status API",
+  "openapi": true,
   "variables": {
     "statusPath": "/api/cards/status",
     "cardsPath": "/api/cards",
@@ -19,12 +20,14 @@
   "tests": [
     {
       "name": "Kart statusunu dəyiş: xarici servis uğurlu",
-      "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır",
+      "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır. DB: qeyd + outbox hadisəsi yazılır, outbox Kafka-ya göndərilir (SENT), consumer success_card-a yazır. OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "tags": ["smoke"],
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "maxTimeMs": 5000,
         "schema": "${resultSchema}",
@@ -36,14 +39,43 @@
           "totalMs": "gte:0"
         }
       },
-      "extract": { "processedId": "id" }
+      "extract": { "processedId": "id" },
+      "db": [
+        {
+          "query": "SELECT card_number, requested_status, result FROM card_status_record WHERE id = ?",
+          "params": ["${okId}"],
+          "expect": {
+            "size()": 1,
+            "[0].card_number": "${cardNumber}",
+            "[0].requested_status": "BLOCKED",
+            "[0].result": "SUCCESS"
+          }
+        },
+        {
+          "query": "SELECT status, attempts, payload FROM outbox_event WHERE card_id = ?",
+          "params": ["${okId}"],
+          "expect": {
+            "size()": 1,
+            "[0].status": "SENT",
+            "[0].payload": "contains:\"result\":\"SUCCESS\""
+          },
+          "await": { "timeoutMs": 15000, "intervalMs": 300 }
+        },
+        {
+          "query": "SELECT card_number, status, result FROM success_card WHERE card_id = ?",
+          "params": ["${okId}"],
+          "expect": { "size()": 1, "[0].card_number": "${cardNumber}", "[0].status": "BLOCKED" },
+          "await": { "timeoutMs": 15000, "intervalMs": 300 }
+        }
+      ]
     },
     {
       "name": "Kart statusunu dəyiş: xarici servis 500 qaytarır",
-      "description": "WireMock: id 5 ilə bitəndə xarici servis 500 qaytarır. API yenə 200 qaytarır, amma success=false",
+      "description": "WireMock: id 5 ilə bitəndə xarici servis 500 qaytarır. API yenə 200 qaytarır, amma success=false; hadisə failure_card-a düşür, success_card-a yox",
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "${failId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "BLOCKED" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${failId}", "requestedStatus": "BLOCKED" },
       "expect": {
         "status": 200,
         "schema": "${resultSchema}",
@@ -52,16 +84,35 @@
           "success": false,
           "errorMessage": "contains:500"
         }
-      }
+      },
+      "db": [
+        {
+          "query": "SELECT result FROM card_status_record WHERE id = ?",
+          "params": ["${failId}"],
+          "expect": { "size()": 1, "[0].result": "FAILURE" }
+        },
+        {
+          "query": "SELECT status, result FROM failure_card WHERE card_id = ?",
+          "params": ["${failId}"],
+          "expect": { "size()": 1, "[0].result": "FAILURE" },
+          "await": { "timeoutMs": 15000, "intervalMs": 300 }
+        },
+        {
+          "query": "SELECT 1 FROM success_card WHERE card_id = ?",
+          "params": ["${failId}"],
+          "expect": { "size()": 0 }
+        }
+      ]
     },
     {
-      "name": "Emal olunan yazı DB-də görünür",
-      "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır",
+      "name": "Emal olunan yazı API-də görünür",
+      "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır. OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "tags": ["smoke"],
       "method": "GET",
       "path": "${cardsPath}",
       "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "schema": "${pageSchema}",
         "body": {
@@ -74,54 +125,80 @@
       }
     },
     {
-      "name": "Səhifələmə: size parametri işləyir",
+      "name": "Səhifələmə: size=${size}",
+      "description": "dataSets: eyni test bir neçə səhifə ölçüsü ilə. OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "method": "GET",
       "path": "${cardsPath}",
-      "queryParams": { "page": 0, "size": 2 },
+      "queryParams": { "page": 0, "size": "${size}" },
+      "dataSets": [
+        { "size": 1 },
+        { "size": 2 },
+        { "size": 5 }
+      ],
       "expect": {
+        "openapi": false,
         "status": 200,
         "schema": "${pageSchema}",
         "body": {
-          "size": 2,
+          "size": "${size}",
           "number": 0,
-          "content.size()": 2,
-          "totalElements": "gte:2"
+          "content.size()": "${size}",
+          "totalElements": "gte:${size}"
         }
       }
     },
     {
       "name": "Idempotency-Key: ilk sorğu",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
-      "body": { "id": "${idemId}", "cardNumber": "4111${random.digits:12}", "requestedStatus": "ACTIVE" },
-      "expect": { "status": 200, "body": { "id": "${idemId}", "success": true } },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${idemId}" },
+      "expect": { "openapi": false, "status": 200, "body": { "id": "${idemId}", "success": true } },
       "extract": { "idemTotalMs": "totalMs", "idemCardNumber": "cardNumber" }
     },
     {
       "name": "Idempotency-Key: təkrar sorğu eyni nəticəni qaytarır",
-      "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı",
+      "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı. OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
-      "body": { "id": "${idemId}", "cardNumber": "${idemCardNumber}", "requestedStatus": "ACTIVE" },
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyOverrides": { "id": "${idemId}", "cardNumber": "${idemCardNumber}" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "body": { "id": "${idemId}", "totalMs": "${idemTotalMs}", "cardNumber": "${idemCardNumber}" }
       }
     },
     {
-      "name": "Idempotency-Key: DB-də yalnız 1 qeyd var",
+      "name": "Idempotency-Key: API-də və DB-də yalnız 1 qeyd var",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "method": "GET",
       "path": "${cardsPath}",
       "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "body": { "content.findAll { it.id == '${idemId}' }.size()": 1 }
-      }
+      },
+      "db": [
+        {
+          "query": "SELECT count(*) AS cnt FROM card_status_record WHERE id = ?",
+          "params": ["${idemId}"],
+          "expect": { "[0].cnt": 1 }
+        },
+        {
+          "query": "SELECT response_body FROM idempotency_record WHERE idempotency_key = ?",
+          "params": ["${idemKey}"],
+          "expect": { "size()": 1, "[0].response_body": "contains:${idemId}" }
+        }
+      ]
     },
     {
       "name": "Batch: hər element emal olunur və sıra qorunur",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${batchPath}",
       "body": [
@@ -130,6 +207,7 @@
         { "id": "${batchId}-5", "cardNumber": "4111${random.digits:12}", "requestedStatus": "EXPIRED" }
       ],
       "expect": {
+        "openapi": false,
         "status": 200,
         "maxTimeMs": 10000,
         "schema": "schemas/card-status/processing-result-list.json",
@@ -138,7 +216,29 @@
           "id": ["${batchId}-1", "${batchId}-2", "${batchId}-5"],
           "success": [true, true, false]
         }
-      }
+      },
+      "db": [
+        {
+          "query": "SELECT id, result FROM card_status_record WHERE id LIKE ? ORDER BY id",
+          "params": ["${batchId}-%"],
+          "expect": {
+            "id": ["${batchId}-1", "${batchId}-2", "${batchId}-5"],
+            "result": ["SUCCESS", "SUCCESS", "FAILURE"]
+          }
+        },
+        {
+          "query": "SELECT card_id FROM success_card WHERE card_id LIKE ? ORDER BY card_id",
+          "params": ["${batchId}-%"],
+          "expect": { "card_id": ["${batchId}-1", "${batchId}-2"] },
+          "await": { "timeoutMs": 15000, "intervalMs": 300 }
+        },
+        {
+          "query": "SELECT card_id FROM failure_card WHERE card_id LIKE ?",
+          "params": ["${batchId}-%"],
+          "expect": { "card_id": ["${batchId}-5"] },
+          "await": { "timeoutMs": 15000, "intervalMs": 300 }
+        }
+      ]
     },
     {
       "name": "Boş batch -> boş cavab",
@@ -179,14 +279,29 @@
       }
     },
     {
-      "name": "Boş sahə -> 400",
+      "name": "Validasiya: ${case} -> 400",
+      "description": "dataFile: hər CSV sətri bir sahəni boş mətn və ya null edir",
       "tags": ["negative"],
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "x-1", "cardNumber": "", "requestedStatus": "ACTIVE" },
+      "dataFile": "testdata/_files/card-validation.csv",
+      "body": { "id": "${id}", "cardNumber": "${cardNumber}", "requestedStatus": "${requestedStatus}" },
       "expect": {
         "status": 400,
-        "body": { "details": ["cardNumber: cardNumber must not be blank"] }
+        "body": { "error": "Validation failed", "details": ["${field}: ${field} must not be blank"] }
+      }
+    },
+    {
+      "name": "requestedStatus sahəsi olmadan -> 400",
+      "description": "bodyRemove: body faylından sahəni silir",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "${statusPath}",
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyRemove": ["requestedStatus"],
+      "expect": {
+        "status": 400,
+        "body": { "details": ["requestedStatus: requestedStatus must not be blank"] }
       }
     },
     {
