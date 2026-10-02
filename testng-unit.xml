@@ -10,6 +10,7 @@
             <class name="az.apitest.unit.PlaceholdersTest"/>
             <class name="az.apitest.unit.DependencyChainTest"/>
             <class name="az.apitest.unit.TestFilesValidTest"/>
+            <class name="az.apitest.unit.FakerAndDatesTest"/>
         </classes>
     </test>
 </suite>

@@ -16,6 +16,7 @@
         <rest-assured.version>5.5.6</rest-assured.version>
         <testng.version>7.11.0</testng.version>
         <jackson.version>2.19.2</jackson.version>
+        <datafaker.version>2.7.0</datafaker.version>
 
         <!-- Default suite faylı; -Dsuite.xml=... ilə dəyişmək olar -->
         <suite.xml>testng.xml</suite.xml>
@@ -46,6 +47,13 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.17</version>
+        </dependency>
+
+        <!-- Realistik test datası: ${faker.name.fullName}, ${faker.internet.emailAddress}, ... -->
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>${datafaker.version}</version>
         </dependency>
     </dependencies>
 
