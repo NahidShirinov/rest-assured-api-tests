@@ -6,6 +6,8 @@
 `mvn test` işlət — **Java yazmağa ehtiyac yoxdur**. Mürəkkəb məntiq lazım olanda eyni infrastrukturla klassik
 REST Assured testi yazmaq olar.
 
+> 🚀 **İlk dəfədir?** Repo-nu clone edib öz testini yazmaq üçün addım-addım bələdçi: **[TEST-YAZMAQ.md](TEST-YAZMAQ.md)**
+
 Nə edə bilir: status/body/header/schema yoxlaması, testlər arası dəyişən ötürmə, **DB yoxlaması**, **await**
 (asinxron proseslər), **OpenAPI contract yoxlaması**, **OpenAPI-dən test generatoru**, **parametrli testlər**
 (dataSets / CSV), **body faylları**, **Faker** ilə realistik data, **qlobal dəyişənlər**, **Allure hesabatı**.
