@@ -48,11 +48,13 @@ public final class ApiTestExecutor {
 
     public Response execute(ApiTestCase tc) {
         try {
-            // Gözləntilər sorğudan ƏVVƏL qurulur: içindəki ${...} asılılıqları da
+            // Gözləntilər və body sorğudan ƏVVƏL qurulur: içindəki ${...} asılılıqları da
             // sorğu göndərilməzdən öncə yoxlanır (yoxdursa, test sorğusuz skip olur)
             Map<String, Object> scope = scope(tc);
             ResponseSpecification expectations = buildExpectations(tc.expect, scope);
-            Response response = send(tc, scope);
+            JsonNode template = BodyBuilder.build(tc);
+            JsonNode body = template == null ? null : Placeholders.resolve(template, scope);
+            Response response = send(tc, scope, body);
             response.then().spec(expectations);
             extract(tc, response);
             return response;
@@ -87,7 +89,7 @@ public final class ApiTestExecutor {
         return scope;
     }
 
-    private Response send(ApiTestCase tc, Map<String, Object> scope) {
+    private Response send(ApiTestCase tc, Map<String, Object> scope, JsonNode body) {
         String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, scope) : Config.baseUrl();
         RequestSpecification req = given().spec(SpecFactory.create(baseUrl));
 
@@ -100,8 +102,8 @@ public final class ApiTestExecutor {
             req.contentType("application/x-www-form-urlencoded");
             tc.formParams.forEach((k, v) -> req.formParam(k, Placeholders.resolveValue(v, scope)));
         }
-        if (tc.body != null && !tc.body.isMissingNode()) {
-            req.body(Placeholders.resolve(tc.body, scope).toString());
+        if (body != null) {
+            req.body(body.toString());
         }
 
         String path = Placeholders.resolve(tc.path, scope);

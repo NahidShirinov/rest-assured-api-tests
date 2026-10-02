@@ -23,6 +23,15 @@ public class ApiTestCase {
     public Map<String, Object> formParams = new LinkedHashMap<>();
     public JsonNode body;
 
+    /** Body-ni fayldan götür (src/test/resources-a nisbətən): "bodies/create-user.json" */
+    public String bodyFile;
+
+    /** Body-də sahələri dəyiş/əlavə et: {"role": "ADMIN", "address.city": "Baku", "items[0].qty": 2} */
+    public Map<String, JsonNode> bodyOverrides = new LinkedHashMap<>();
+
+    /** Body-dən sahələri sil (məcburi sahə yoxdursa testləri üçün): ["email", "address.zip"] */
+    public List<String> bodyRemove = new ArrayList<>();
+
     /** Eyni testi bir neçə data ilə işlət: hər sətir ${açar} kimi əlçatandır. */
     public List<Map<String, Object>> dataSets = new ArrayList<>();
 

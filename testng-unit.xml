@@ -11,6 +11,7 @@
             <class name="az.apitest.unit.DependencyChainTest"/>
             <class name="az.apitest.unit.TestFilesValidTest"/>
             <class name="az.apitest.unit.CsvTest"/>
+            <class name="az.apitest.unit.BodyBuilderTest"/>
             <class name="az.apitest.unit.DataAndGlobalsTest"/>
             <class name="az.apitest.unit.FakerAndDatesTest"/>
         </classes>

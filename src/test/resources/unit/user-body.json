@@ -1,0 +1,6 @@
+{
+  "name": "Ali",
+  "email": "${random.email}",
+  "role": "USER",
+  "address": { "city": "Baku" }
+}
