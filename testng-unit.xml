@@ -14,6 +14,7 @@
             <class name="az.apitest.unit.BodyBuilderTest"/>
             <class name="az.apitest.unit.DataAndGlobalsTest"/>
             <class name="az.apitest.unit.FakerAndDatesTest"/>
+            <class name="az.apitest.unit.AwaitTest"/>
         </classes>
     </test>
 </suite>

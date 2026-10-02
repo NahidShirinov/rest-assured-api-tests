@@ -38,6 +38,9 @@ public class ApiTestCase {
     /** Data sətirləri CSV faylından (birinci sətir = başlıqlar): "data/users.csv" */
     public String dataFile;
 
+    /** Sorğunu + gözləntiləri şərt ödənənə qədər təkrarla (GET üçün; POST təkrar göndərilir!). */
+    public AwaitConfig await;
+
     public Expectation expect = new Expectation();
 
     /** Cavabdan dəyər çıxarıb növbəti testlərə ötürmək: {"postId": "id", "loc": "header:Location"} */

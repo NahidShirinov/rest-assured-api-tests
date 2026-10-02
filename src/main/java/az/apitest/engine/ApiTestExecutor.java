@@ -54,8 +54,12 @@ public final class ApiTestExecutor {
             ResponseSpecification expectations = buildExpectations(tc.expect, scope);
             JsonNode template = BodyBuilder.build(tc);
             JsonNode body = template == null ? null : Placeholders.resolve(template, scope);
-            Response response = send(tc, scope, body);
-            response.then().spec(expectations);
+
+            Response response = Await.until(tc.await, () -> {
+                Response r = send(tc, scope, body);
+                r.then().spec(expectations);
+                return r;
+            });
             extract(tc, response);
             return response;
         } catch (DependencyFailedException e) {
