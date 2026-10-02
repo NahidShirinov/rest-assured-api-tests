@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "api-test-globals.schema.json",
+  "title": "API test globals (testdata/_globals.json)",
+  "description": "Bütün suite-lərə tətbiq olunan ortaq dəyərlər. Suite-in öz dəyəri eyni adlı qlobal dəyəri üstələyir.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "variables": {
+      "type": "object",
+      "description": "Bütün suite-lərdə ${ad} kimi əlçatan"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Bütün sorğulara əlavə olunan header-lər"
+    },
+    "datasources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "JDBC URL: jdbc:postgresql://localhost:5432/shop"
+          },
+          "user": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "description": "Şifrəni fayla yazma: ${env.DB_PASSWORD}"
+          }
+        }
+      }
+    },
+    "openapi": {
+      "type": "boolean"
+    },
+    "openapiSpec": {
+      "type": "string"
+    }
+  }
+}

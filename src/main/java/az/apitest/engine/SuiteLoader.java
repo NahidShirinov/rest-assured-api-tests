@@ -3,6 +3,7 @@ package az.apitest.engine;
 import az.apitest.config.Config;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
+import az.apitest.model.Globals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -32,6 +33,8 @@ import java.util.stream.Stream;
  *   -Dtags=smoke,crud     yalnız bu tag-lardan biri olan testlər
  *   -Dtestdata.dir=...    başqa qovluq (default: testdata)
  *
+ * "_" ilə başlayan fayl və qovluqlar suite sayılmır: _globals.json (ortaq dəyərlər), _files/ (body, CSV),
+ * _<ad>.json (generatorun qaralamaları).
  * dataSets / dataFile olan test hər data sətri üçün ayrıca testə çevrilir.
  */
 public final class SuiteLoader {
@@ -46,13 +49,16 @@ public final class SuiteLoader {
         Set<String> suiteFilter = csv(Config.get("suite", ""));
         Set<String> tagFilter = csv(Config.get("tags", ""));
 
+        Path root = resolveDir(dir);
+        Globals globals = readGlobals(root.resolve("_globals.json"));
         List<ApiTestSuite> suites = new ArrayList<>();
-        for (Path file : listJsonFiles(dir)) {
+        for (Path file : listJsonFiles(root)) {
             String fileName = file.getFileName().toString();
             if (!suiteFilter.isEmpty() && suiteFilter.stream().noneMatch(fileName::contains)) {
                 continue;
             }
             ApiTestSuite suite = read(file);
+            applyGlobals(suite, globals);
             if (!tagFilter.isEmpty()) {
                 suite.tests.removeIf(tc -> tc.tags.stream().noneMatch(tagFilter::contains));
             }
@@ -114,8 +120,32 @@ public final class SuiteLoader {
         return result;
     }
 
-    private static List<Path> listJsonFiles(String dir) {
-        return listJsonFiles(resolveDir(dir));
+    public static Globals readGlobals(Path file) {
+        if (!Files.isRegularFile(file)) {
+            return new Globals();
+        }
+        try {
+            return MAPPER.readValue(file.toFile(), Globals.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException("JSON oxunmadı: " + file + " -> " + e.getMessage(), e);
+        }
+    }
+
+    /** Qlobal dəyərlər əvvəl, suite-inkilər sonra (eyni adlı açarda suite qalib gəlir). */
+    public static void applyGlobals(ApiTestSuite suite, Globals globals) {
+        Map<String, Object> variables = new LinkedHashMap<>(globals.variables);
+        variables.putAll(suite.variables);
+        suite.variables = variables;
+        Map<String, String> headers = new LinkedHashMap<>(globals.headers);
+        headers.putAll(suite.headers);
+        suite.headers = headers;
+        globals.datasources.forEach(suite.datasources::putIfAbsent);
+        if (suite.openapi == null) {
+            suite.openapi = globals.openapi;
+        }
+        if (suite.openapiSpec == null) {
+            suite.openapiSpec = globals.openapiSpec;
+        }
     }
 
     private static Path resolveDir(String dir) {
@@ -137,10 +167,23 @@ public final class SuiteLoader {
 
     private static List<Path> listJsonFiles(Path root) {
         try (Stream<Path> stream = Files.walk(root)) {
-            return stream.filter(p -> p.toString().endsWith(".json")).sorted().collect(Collectors.toList());
+            return stream.filter(p -> p.toString().endsWith(".json"))
+                    .filter(p -> !hasUnderscoreSegment(root.relativize(p)))
+                    .sorted()
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** _globals.json, _files/... kimi "_" ilə başlayan fayl/qovluqlar suite deyil. */
+    public static boolean hasUnderscoreSegment(Path relative) {
+        for (Path segment : relative) {
+            if (segment.toString().startsWith("_")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<String> csv(String value) {

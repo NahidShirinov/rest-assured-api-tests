@@ -2,6 +2,9 @@ package az.apitest.unit;
 
 import az.apitest.engine.SuiteLoader;
 import az.apitest.model.ApiTestCase;
+import az.apitest.model.ApiTestSuite;
+import az.apitest.model.DataSource;
+import az.apitest.model.Globals;
 import org.testng.annotations.Test;
 
 import java.util.LinkedHashMap;
@@ -54,4 +57,30 @@ public class DataAndGlobalsTest {
         assertEquals(expanded.get(1).name, "Yarat [2]");
     }
 
+    @Test
+    public void globalsApplyButSuiteValuesWin() {
+        Globals globals = new Globals();
+        globals.variables.put("env", "global");
+        globals.variables.put("adminId", 7);
+        globals.headers.put("X-Client", "tests");
+        globals.headers.put("X-Lang", "en");
+        DataSource ds = new DataSource();
+        ds.url = "jdbc:h2:mem:g";
+        globals.datasources.put("main", ds);
+        globals.openapi = true;
+        globals.openapiSpec = "spec.yaml";
+
+        ApiTestSuite suite = new ApiTestSuite();
+        suite.variables.put("env", "suite");
+        suite.headers.put("X-Lang", "az");
+        suite.openapi = false;
+
+        SuiteLoader.applyGlobals(suite, globals);
+
+        assertEquals(suite.variables, Map.of("env", "suite", "adminId", 7));
+        assertEquals(suite.headers, Map.of("X-Client", "tests", "X-Lang", "az"));
+        assertEquals(suite.datasources.get("main").url, "jdbc:h2:mem:g");
+        assertEquals(suite.openapi, Boolean.FALSE);
+        assertEquals(suite.openapiSpec, "spec.yaml");
+    }
 }
