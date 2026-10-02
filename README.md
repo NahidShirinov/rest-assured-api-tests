@@ -1,6 +1,6 @@
 # API Test Framework (REST Assured + TestNG)
 
-[![CI](https://github.com/NahidShirinov/restassured-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/NahidShirinov/restassured-testing/actions/workflows/ci.yml)
+[![CI](https://github.com/NahidShirinov/rest-assured-api-tests/actions/workflows/ci.yml/badge.svg)](https://github.com/NahidShirinov/rest-assured-api-tests/actions/workflows/ci.yml)
 
 İstənilən REST API üçün test framework-ü. Repo-nu çək, `src/test/resources/testdata/` qovluğuna JSON fayl əlavə et,
 `mvn test` işlət — **Java yazmağa ehtiyac yoxdur**. Mürəkkəb məntiq lazım olanda eyni infrastrukturla klassik
