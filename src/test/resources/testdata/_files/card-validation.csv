@@ -1,0 +1,7 @@
+case,field,id,cardNumber,requestedStatus
+id boş mətn,id,"",4111-0000-0000-0001,ACTIVE
+id null,id,null,4111-0000-0000-0001,ACTIVE
+cardNumber boş mətn,cardNumber,v-1,"",ACTIVE
+cardNumber null,cardNumber,v-1,null,ACTIVE
+requestedStatus boş mətn,requestedStatus,v-1,4111-0000-0000-0001,""
+requestedStatus null,requestedStatus,v-1,4111-0000-0000-0001,null

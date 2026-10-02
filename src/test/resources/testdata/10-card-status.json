@@ -269,14 +269,29 @@
       }
     },
     {
-      "name": "Boş sahə -> 400",
+      "name": "Validasiya: ${case} -> 400",
+      "description": "dataFile: hər CSV sətri bir sahəni boş mətn və ya null edir",
       "tags": ["negative"],
       "method": "POST",
       "path": "${statusPath}",
-      "body": { "id": "x-1", "cardNumber": "", "requestedStatus": "ACTIVE" },
+      "dataFile": "testdata/_files/card-validation.csv",
+      "body": { "id": "${id}", "cardNumber": "${cardNumber}", "requestedStatus": "${requestedStatus}" },
       "expect": {
         "status": 400,
-        "body": { "details": ["cardNumber: cardNumber must not be blank"] }
+        "body": { "error": "Validation failed", "details": ["${field}: ${field} must not be blank"] }
+      }
+    },
+    {
+      "name": "requestedStatus sahəsi olmadan -> 400",
+      "description": "bodyRemove: body faylından sahəni silir",
+      "tags": ["negative"],
+      "method": "POST",
+      "path": "${statusPath}",
+      "bodyFile": "testdata/_files/card-status-request.json",
+      "bodyRemove": ["requestedStatus"],
+      "expect": {
+        "status": 400,
+        "body": { "details": ["requestedStatus: requestedStatus must not be blank"] }
       }
     },
     {
