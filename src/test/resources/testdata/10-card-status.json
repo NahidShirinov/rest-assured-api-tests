@@ -1,6 +1,7 @@
 {
   "$schema": "../api-test.schema.json",
   "suite": "Card Status API",
+  "openapi": true,
   "variables": {
     "statusPath": "/api/cards/status",
     "cardsPath": "/api/cards",
@@ -19,13 +20,14 @@
   "tests": [
     {
       "name": "Kart statusunu dəyiş: xarici servis uğurlu",
-      "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır. DB: qeyd + outbox hadisəsi yazılır, outbox Kafka-ya göndərilir (SENT), consumer success_card-a yazır",
+      "description": "WireMock: id 0 və ya 5 ilə bitmirsə xarici servis uğur qaytarır. DB: qeyd + outbox hadisəsi yazılır, outbox Kafka-ya göndərilir (SENT), consumer success_card-a yazır. OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "tags": ["smoke"],
       "method": "POST",
       "path": "${statusPath}",
       "bodyFile": "testdata/_files/card-status-request.json",
       "bodyOverrides": { "id": "${okId}", "cardNumber": "${cardNumber}", "requestedStatus": "BLOCKED" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "maxTimeMs": 5000,
         "schema": "${resultSchema}",
@@ -104,12 +106,13 @@
     },
     {
       "name": "Emal olunan yazı API-də görünür",
-      "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır",
+      "description": "Ən yeni 100 qeyd arasında əvvəlki testin id-si ilə axtarır. OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "tags": ["smoke"],
       "method": "GET",
       "path": "${cardsPath}",
       "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "schema": "${pageSchema}",
         "body": {
@@ -123,7 +126,7 @@
     },
     {
       "name": "Səhifələmə: size=${size}",
-      "description": "dataSets: eyni test bir neçə səhifə ölçüsü ilə",
+      "description": "dataSets: eyni test bir neçə səhifə ölçüsü ilə. OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "method": "GET",
       "path": "${cardsPath}",
       "queryParams": { "page": 0, "size": "${size}" },
@@ -133,6 +136,7 @@
         { "size": 5 }
       ],
       "expect": {
+        "openapi": false,
         "status": 200,
         "schema": "${pageSchema}",
         "body": {
@@ -145,33 +149,37 @@
     },
     {
       "name": "Idempotency-Key: ilk sorğu",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
       "bodyFile": "testdata/_files/card-status-request.json",
       "bodyOverrides": { "id": "${idemId}" },
-      "expect": { "status": 200, "body": { "id": "${idemId}", "success": true } },
+      "expect": { "openapi": false, "status": 200, "body": { "id": "${idemId}", "success": true } },
       "extract": { "idemTotalMs": "totalMs", "idemCardNumber": "cardNumber" }
     },
     {
       "name": "Idempotency-Key: təkrar sorğu eyni nəticəni qaytarır",
-      "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı",
+      "description": "Yenidən emal olunsaydı totalMs demək olar ki, həmişə fərqli olardı. OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${statusPath}",
       "headers": { "Idempotency-Key": "${idemKey}" },
       "bodyFile": "testdata/_files/card-status-request.json",
       "bodyOverrides": { "id": "${idemId}", "cardNumber": "${idemCardNumber}" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "body": { "id": "${idemId}", "totalMs": "${idemTotalMs}", "cardNumber": "${idemCardNumber}" }
       }
     },
     {
       "name": "Idempotency-Key: API-də və DB-də yalnız 1 qeyd var",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində pageable.sort massivdir, cavabda isə obyekt gəlir",
       "method": "GET",
       "path": "${cardsPath}",
       "queryParams": { "size": "${latestPageSize}", "sort": "recordId,desc" },
       "expect": {
+        "openapi": false,
         "status": 200,
         "body": { "content.findAll { it.id == '${idemId}' }.size()": 1 }
       },
@@ -190,6 +198,7 @@
     },
     {
       "name": "Batch: hər element emal olunur və sıra qorunur",
+      "description": "OpenAPI söndürülüb: servisin Swagger-ində errorMessage nullable deyil, cavabda isə null gəlir",
       "method": "POST",
       "path": "${batchPath}",
       "body": [
@@ -198,6 +207,7 @@
         { "id": "${batchId}-5", "cardNumber": "4111${random.digits:12}", "requestedStatus": "EXPIRED" }
       ],
       "expect": {
+        "openapi": false,
         "status": 200,
         "maxTimeMs": 10000,
         "schema": "schemas/card-status/processing-result-list.json",
