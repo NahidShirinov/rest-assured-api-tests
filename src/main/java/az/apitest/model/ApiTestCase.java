@@ -23,10 +23,19 @@ public class ApiTestCase {
     public Map<String, Object> formParams = new LinkedHashMap<>();
     public JsonNode body;
 
+    /** Eyni testi bir neçə data ilə işlət: hər sətir ${açar} kimi əlçatandır. */
+    public List<Map<String, Object>> dataSets = new ArrayList<>();
+
+    /** Data sətirləri CSV faylından (birinci sətir = başlıqlar): "data/users.csv" */
+    public String dataFile;
+
     public Expectation expect = new Expectation();
 
     /** Cavabdan dəyər çıxarıb növbəti testlərə ötürmək: {"postId": "id", "loc": "header:Location"} */
     public Map<String, String> extract = new LinkedHashMap<>();
+
+    /** dataSets/dataFile-dan gələn bu sətrin dəyərləri (loader doldurur). */
+    public transient Map<String, Object> data = new LinkedHashMap<>();
 
     @Override
     public String toString() {

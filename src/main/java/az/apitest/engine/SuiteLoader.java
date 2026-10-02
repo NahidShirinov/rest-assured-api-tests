@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,6 +31,8 @@ import java.util.stream.Stream;
  *   -Dsuite=posts         yalnız adında "posts" olan fayllar (vergüllə bir neçə)
  *   -Dtags=smoke,crud     yalnız bu tag-lardan biri olan testlər
  *   -Dtestdata.dir=...    başqa qovluq (default: testdata)
+ *
+ * dataSets / dataFile olan test hər data sətri üçün ayrıca testə çevrilir.
  */
 public final class SuiteLoader {
 
@@ -66,6 +70,7 @@ public final class SuiteLoader {
             if (suite.suite == null) {
                 suite.suite = suite.sourceFile.replace(".json", "");
             }
+            List<ApiTestCase> expanded = new ArrayList<>();
             for (int i = 0; i < suite.tests.size(); i++) {
                 ApiTestCase tc = suite.tests.get(i);
                 if (tc.path == null) {
@@ -74,11 +79,39 @@ public final class SuiteLoader {
                 if (tc.name == null) {
                     tc.name = tc.method + " " + tc.path;
                 }
+                expanded.addAll(expandData(tc));
             }
+            suite.tests = expanded;
             return suite;
         } catch (IOException e) {
             throw new UncheckedIOException("JSON oxunmadı: " + file + " -> " + e.getMessage(), e);
         }
+    }
+
+    /** dataSets + dataFile sətirləri -> hər biri ayrıca test (data = sətrin dəyərləri). */
+    public static List<ApiTestCase> expandData(ApiTestCase tc) {
+        List<Map<String, Object>> rows = new ArrayList<>(tc.dataSets);
+        if (tc.dataFile != null) {
+            rows.addAll(Csv.parse(Resources.read(tc.dataFile)));
+        }
+        if (rows.isEmpty()) {
+            return List.of(tc);
+        }
+        List<ApiTestCase> result = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, Object> row = rows.get(i);
+            ApiTestCase copy = MAPPER.convertValue(tc, ApiTestCase.class);
+            copy.dataSets = new ArrayList<>();
+            copy.dataFile = null;
+            copy.data = new LinkedHashMap<>(row);
+            String name = tc.name;
+            for (Map.Entry<String, Object> e : row.entrySet()) {
+                name = name.replace("${" + e.getKey() + "}", String.valueOf(e.getValue()));
+            }
+            copy.name = name.equals(tc.name) ? tc.name + " [" + (i + 1) + "]" : name;
+            result.add(copy);
+        }
+        return result;
     }
 
     private static List<Path> listJsonFiles(String dir) {

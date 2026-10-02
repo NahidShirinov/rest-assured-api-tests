@@ -50,8 +50,9 @@ public final class ApiTestExecutor {
         try {
             // Gözləntilər sorğudan ƏVVƏL qurulur: içindəki ${...} asılılıqları da
             // sorğu göndərilməzdən öncə yoxlanır (yoxdursa, test sorğusuz skip olur)
-            ResponseSpecification expectations = buildExpectations(tc.expect);
-            Response response = send(tc);
+            Map<String, Object> scope = scope(tc);
+            ResponseSpecification expectations = buildExpectations(tc.expect, scope);
+            Response response = send(tc, scope);
             response.then().spec(expectations);
             extract(tc, response);
             return response;
@@ -76,45 +77,56 @@ public final class ApiTestExecutor {
                 vars.put(name, new DependencyFailedException.Unavailable(tc.name, reason)));
     }
 
-    private Response send(ApiTestCase tc) {
-        String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, vars) : Config.baseUrl();
+    /** Bu testin dəyişənləri: suite dəyişənləri + (varsa) data sətrinin dəyərləri. */
+    private Map<String, Object> scope(ApiTestCase tc) {
+        if (tc.data.isEmpty()) {
+            return vars;
+        }
+        Map<String, Object> scope = new LinkedHashMap<>(vars);
+        scope.putAll(tc.data);
+        return scope;
+    }
+
+    private Response send(ApiTestCase tc, Map<String, Object> scope) {
+        String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, scope) : Config.baseUrl();
         RequestSpecification req = given().spec(SpecFactory.create(baseUrl));
 
-        suite.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, vars)));
-        tc.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, vars)));
-        tc.queryParams.forEach((k, v) -> req.queryParam(k, Placeholders.resolveValue(v, vars)));
-        tc.pathParams.forEach((k, v) -> req.pathParam(k, Placeholders.resolveValue(v, vars)));
+        suite.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, scope)));
+        tc.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, scope)));
+        tc.queryParams.forEach((k, v) -> req.queryParam(k, Placeholders.resolveValue(v, scope)));
+        tc.pathParams.forEach((k, v) -> req.pathParam(k, Placeholders.resolveValue(v, scope)));
 
         if (!tc.formParams.isEmpty()) {
             req.contentType("application/x-www-form-urlencoded");
-            tc.formParams.forEach((k, v) -> req.formParam(k, Placeholders.resolveValue(v, vars)));
+            tc.formParams.forEach((k, v) -> req.formParam(k, Placeholders.resolveValue(v, scope)));
         }
         if (tc.body != null && !tc.body.isMissingNode()) {
-            req.body(Placeholders.resolve(tc.body, vars).toString());
+            req.body(Placeholders.resolve(tc.body, scope).toString());
         }
 
-        String path = Placeholders.resolve(tc.path, vars);
+        String path = Placeholders.resolve(tc.path, scope);
         return req.request(Method.valueOf(tc.method.toUpperCase()), path);
     }
 
     @SuppressWarnings("unchecked")
-    private ResponseSpecification buildExpectations(Expectation exp) {
+    private ResponseSpecification buildExpectations(Expectation exp, Map<String, Object> scope) {
         ResponseSpecBuilder spec = new ResponseSpecBuilder();
 
         if (exp.status != null) {
-            spec.expectStatusCode(exp.status);
+            Object status = Placeholders.resolveValue(exp.status, scope);
+            spec.expectStatusCode(status instanceof Number n ? n.intValue() : Integer.parseInt(status.toString().trim()));
         }
         if (exp.maxTimeMs != null) {
             spec.expectResponseTime(lessThanOrEqualTo(exp.maxTimeMs), TimeUnit.MILLISECONDS);
         }
         if (exp.schema != null) {
-            spec.expectBody(matchesJsonSchemaInClasspath(Placeholders.resolve(exp.schema, vars)));
+            spec.expectBody(matchesJsonSchemaInClasspath(Placeholders.resolve(exp.schema, scope)));
         }
         exp.headers.forEach((name, value) ->
-                spec.expectHeader(name, (Matcher<String>) MatcherFactory.fromString(Placeholders.resolve(value, vars))));
+                spec.expectHeader(name, (Matcher<String>) MatcherFactory.fromString(Placeholders.resolve(value, scope))));
         exp.body.forEach((path, expected) -> {
-            JsonNode resolved = Placeholders.resolve(expected, vars);
-            spec.expectBody(Placeholders.resolve(path, vars), MatcherFactory.from(resolved));
+            JsonNode resolved = Placeholders.resolve(expected, scope);
+            spec.expectBody(Placeholders.resolve(path, scope), MatcherFactory.from(resolved));
         });
         return spec.build();
     }

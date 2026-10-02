@@ -1,0 +1,4 @@
+case,email,status
+"düzgün email",ok@test.com,201
+"email boş","",400
+"vergül, dırnaq ""x""",a@b.com,201

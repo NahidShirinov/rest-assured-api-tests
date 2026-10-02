@@ -17,7 +17,8 @@ import java.util.Map;
  */
 public class Expectation {
 
-    public Integer status;
+    /** 200 və ya "${status}" (dataSets-də hər sətir öz statusunu verə bilər). */
+    public Object status;
     public Long maxTimeMs;
     /** classpath-da JSON schema faylı, məs. "schemas/post.json" */
     public String schema;
