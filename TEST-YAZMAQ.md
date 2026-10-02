@@ -22,9 +22,8 @@ mvn test -Dsuite.xml=testng-unit.xml      # framework-ün öz testləri: API laz
 
 Sonda `Failures: 0` və `BUILD SUCCESS` görünürsə, mühit hazırdır.
 
-> ⚠️ **Sadəcə `mvn test` işlətmə.** `testdata/` qovluğunda artıq başqa komandanın testləri var
-> (məs. `10-card-status.json`) və onlar o servisin lokal işləməsini tələb edir — səndə `Connection refused`
-> ilə qırılacaqlar. Həmişə **öz faylını** işlət: `mvn test -Dsuite=<faylın adı>` (aşağıda).
+> 💡 Repo-da əvvəlki nümunə testlər varsa və onlar sənin servisinə aid deyilsə, `testdata/`-dan sil
+> və ya yalnız öz faylını işlət: `mvn test -Dsuite=<faylın adı>` (aşağıda).
 
 ---
 
@@ -33,8 +32,7 @@ Sonda `Failures: 0` və `BUILD SUCCESS` görünürsə, mühit hazırdır.
 ```
 src/test/resources/
 ├── testdata/                   ← TESTLƏR BURADADIR (hər .json fayl = bir suite)
-│   ├── 10-card-status.json     başqa komandanın testləri
-│   ├── 20-orders.json          ← sən buraya yeni fayl əlavə edirsən
+│   ├── 20-orders.json          ← sənin test faylın (istənilən qədər fayl)
 │   ├── _globals.json           bütün suite-lər üçün ortaq header/dəyişən
 │   └── _files/                 body faylları, CSV data ("_" = test deyil)
 ├── config/dev.properties       base.url, DB, OpenAPI ayarları
@@ -111,16 +109,23 @@ Nə baş verdi:
 
 ## 4. Öz API-nə keçmək
 
-`baseUrl`-i öz API-nin ünvanına dəyiş. İki yol var:
+Servisinin ünvanını `config/dev.properties`-ə yaz — bütün test faylları onu istifadə edir:
+
+```properties
+base.url=http://localhost:8080
+```
+
+Digər variantlar:
 
 | Yol | Nə vaxt |
 |---|---|
-| Suite-də `"baseUrl": "http://localhost:8080"` | Bir fayl = bir API (ən sadəsi) |
-| Öz config faylın: `config/<mühit>.properties` yarat (`base.url=...`), işlət: `mvn test -Denv=<mühit> -Dsuite=...` | Eyni testləri müxtəlif mühitlərdə (local / test / stage) |
+| Suite-də `"baseUrl": "http://..."` | Bir faylın testləri başqa ünvana gedir (məs. ikinci servis) |
+| `config/test.properties`, `config/stage.properties` ... yarat, işlət: `mvn test -Denv=test` | Eyni testləri müxtəlif mühitlərdə işlətmək |
+| `mvn test -Dbase.url=http://...` | Bir dəfəlik başqa ünvan |
 
-> `config/dev.properties` başqa komandanın ayarlarını saxlayır — onu dəyişmək əvəzinə öz faylını yarat.
+Faylda servisinə aid olmayan ayarlar varsa (`db.*`, `openapi.spec`), onları sil və ya öz dəyərlərinlə əvəz et.
 
-Auth lazımdırsa (öz config faylında):
+Auth lazımdırsa (config faylında):
 
 ```properties
 auth.type=bearer          # none | bearer | basic | apikey
@@ -270,7 +275,7 @@ və DB sorğusu ayrıca görünür.
 
 | Mesaj | Səbəb | Həll |
 |---|---|---|
-| `Connection refused` | API işləmir və ya ünvan səhvdir | Servisi qaldır, `baseUrl`-i yoxla. Başqasının faylıdırsa — `-Dsuite=` ilə yalnız öz faylını işlət |
+| `Connection refused` | API işləmir və ya ünvan səhvdir | Servisi qaldır, `base.url` / `baseUrl`-i yoxla |
 | `JSON oxunmadı: ... Unrecognized field "expcet"` | Sahə adında yazı səhvi | Adı düzəlt (IDE-də `$schema` sayəsində qırmızı görünür) |
 | `Naməlum dəyişən ${x}. Mövcud olanlar: [...]` | Dəyişən təyin olunmayıb | `variables`-a əlavə et və ya əvvəlki testdə `extract` et |
 | `${x} yoxdur, çünki '...' uğursuz oldu - bu test keçildi` | Dəyişəni verən test qırılıb | Əvvəl həmin testi düzəlt — bu test avtomatik **skip** olunub |
