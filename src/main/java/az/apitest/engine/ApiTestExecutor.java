@@ -6,6 +6,7 @@ import az.apitest.matchers.MatcherFactory;
 import az.apitest.model.ApiTestCase;
 import az.apitest.model.ApiTestSuite;
 import az.apitest.model.Expectation;
+import com.atlassian.oai.validator.report.ValidationReport;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.Method;
@@ -17,6 +18,7 @@ import org.hamcrest.Matcher;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
@@ -54,10 +56,15 @@ public final class ApiTestExecutor {
             ResponseSpecification expectations = buildExpectations(tc.expect, scope);
             JsonNode template = BodyBuilder.build(tc);
             JsonNode body = template == null ? null : Placeholders.resolve(template, scope);
+            String openApiSpec = openApiSpec(tc, scope);
 
             Response response = Await.until(tc.await, () -> {
-                Response r = send(tc, scope, body);
+                AtomicReference<ValidationReport> report = new AtomicReference<>();
+                Response r = send(tc, scope, body, openApiSpec == null ? null : report, openApiSpec);
                 r.then().spec(expectations);
+                if (openApiSpec != null) {
+                    OpenApiValidation.assertValid(openApiSpec, report.get());
+                }
                 return r;
             });
             extract(tc, response);
@@ -93,9 +100,27 @@ public final class ApiTestExecutor {
         return scope;
     }
 
-    private Response send(ApiTestCase tc, Map<String, Object> scope, JsonNode body) {
+    /** OpenAPI yoxlaması aktivdirsə spesifikasiya yeri, deyilsə null. */
+    private String openApiSpec(ApiTestCase tc, Map<String, Object> scope) {
+        boolean enabled = tc.expect.openapi != null ? tc.expect.openapi : Boolean.TRUE.equals(suite.openapi);
+        if (!enabled) {
+            return null;
+        }
+        String spec = suite.openapiSpec != null ? suite.openapiSpec : Config.get("openapi.spec");
+        if (spec == null || spec.isBlank()) {
+            throw new IllegalStateException("'" + tc.name + "': \"openapi\": true üçün spesifikasiya lazımdır - "
+                    + "config-ə openapi.spec=<URL və ya fayl> yaz və ya suite-də \"openapiSpec\" təyin et");
+        }
+        return Placeholders.resolve(spec, scope);
+    }
+
+    private Response send(ApiTestCase tc, Map<String, Object> scope, JsonNode body,
+                          AtomicReference<ValidationReport> openApiReport, String openApiSpec) {
         String baseUrl = suite.baseUrl != null ? Placeholders.resolve(suite.baseUrl, scope) : Config.baseUrl();
         RequestSpecification req = given().spec(SpecFactory.create(baseUrl));
+        if (openApiReport != null) {
+            req.filter(OpenApiValidation.filter(openApiSpec, openApiReport));
+        }
 
         suite.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, scope)));
         tc.headers.forEach((k, v) -> req.header(k, Placeholders.resolve(v, scope)));

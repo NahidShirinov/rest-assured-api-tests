@@ -17,6 +17,7 @@
         <testng.version>7.11.0</testng.version>
         <jackson.version>2.19.2</jackson.version>
         <datafaker.version>2.7.0</datafaker.version>
+        <openapi-validator.version>2.46.1</openapi-validator.version>
 
         <!-- Default suite faylı; -Dsuite.xml=... ilə dəyişmək olar -->
         <suite.xml>testng.xml</suite.xml>
@@ -54,6 +55,13 @@
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
             <version>${datafaker.version}</version>
+        </dependency>
+
+        <!-- "openapi": true - cavabı servisin OpenAPI spesifikasiyasına qarşı yoxlayır; test generatoru da istifadə edir -->
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>swagger-request-validator-restassured</artifactId>
+            <version>${openapi-validator.version}</version>
         </dependency>
     </dependencies>
 

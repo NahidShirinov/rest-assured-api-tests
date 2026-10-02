@@ -22,6 +22,8 @@ public class Expectation {
     public Long maxTimeMs;
     /** classpath-da JSON schema faylı, məs. "schemas/post.json" */
     public String schema;
+    /** Cavabı OpenAPI spesifikasiyasına qarşı yoxla (suite-dəki "openapi" default-unu dəyişir). */
+    public Boolean openapi;
     public Map<String, String> headers = new LinkedHashMap<>();
     public Map<String, JsonNode> body = new LinkedHashMap<>();
 }

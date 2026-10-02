@@ -26,6 +26,12 @@ public class ApiTestSuite {
     /** Suite-dəki bütün sorğulara əlavə olunan header-lər. */
     public Map<String, String> headers = new LinkedHashMap<>();
 
+    /** Bütün testlərdə cavabı OpenAPI spesifikasiyasına qarşı yoxla (test səviyyəsində "expect.openapi" ilə dəyişmək olar). */
+    public Boolean openapi;
+
+    /** OpenAPI spesifikasiyası (URL və ya fayl). Yoxdursa config-dəki openapi.spec. */
+    public String openapiSpec;
+
     public List<ApiTestCase> tests = new ArrayList<>();
 
     /** Hansı fayldan yüklənib (loader doldurur). */
