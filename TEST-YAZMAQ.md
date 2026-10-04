@@ -264,7 +264,7 @@ Suite-in yuxarısına: `"openapi": true, "openapiSpec": "http://localhost:8080/v
 | Yalnız smoke | `mvn test -Dsuite=20-orders -Dtags=smoke` |
 | Request/response-ları konsolda gör | `... -Dlog.all=true` |
 | Faylımın formatını yoxla (API-siz) | `mvn test -Dsuite.xml=testng-unit.xml` |
-| Hesabat (brauzerdə) | `mvn clean test -Dsuite=...` sonra `mvn allure:serve` |
+| Hesabat (brauzerdə) | `mvn test -Dsuite=...` sonra `mvn allure:serve` (köhnə nəticələr avtomatik silinir) |
 
 Uğursuz testdə request və response avtomatik konsola yazılır. Allure hesabatında hər testin request, response
 və DB sorğusu ayrıca görünür.

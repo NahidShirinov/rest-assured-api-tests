@@ -71,7 +71,7 @@ AUTH_TOKEN=xxx mvn test -Dauth.type=bearer
 ### Hesabat (Allure)
 
 ```bash
-mvn clean test         # clean: köhnə nəticələr yeni hesabata qarışmasın
+mvn test               # köhnə Allure nəticələri hər işləmədən əvvəl avtomatik silinir
 mvn allure:serve       # hesabatı yaradıb brauzerdə açır
 mvn allure:report      # yalnız yaradır: target/site/allure-maven-plugin/index.html
 ```
