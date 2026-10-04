@@ -143,7 +143,8 @@ public final class OpenApiTestGenerator {
             }
         }
         for (Parameter p : params) {
-            if ("query".equals(p.getIn()) && Boolean.TRUE.equals(p.getRequired())) {
+            // obyekt parametri (Spring Pageable kimi) sahələrinə ayrılır; özü "olmadan" test olunmur
+            if ("query".equals(p.getIn()) && Boolean.TRUE.equals(p.getRequired()) && !isObject(p.getSchema())) {
                 ObjectNode neg = baseTest(title + ": '" + p.getName() + "' parametri olmadan -> 400", path, method, params,
                         List.of("generated", "negative"));
                 ((ObjectNode) neg.get("queryParams")).remove(p.getName());
@@ -165,6 +166,35 @@ public final class OpenApiTestGenerator {
         return ordered;
     }
 
+    /**
+     * Query parametrinin göndəriləcək dəyər(lər)i.
+     * Obyekt (məs. Spring Data Pageable: page, size, sort) URL-də ayrı parametrlər kimi gedir ("form, explode"),
+     * ona görə sahələrinə ayrılır və yalnız obyektin məcburi sahələri göndərilir.
+     * Massiv parametrdən bir dəyər göndərilir.
+     */
+    private static Map<String, Object> queryValues(Parameter p, Object value) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        Schema<?> schema = p.getSchema();
+        if (isObject(schema)) {
+            if (schema.getRequired() != null && schema.getProperties() != null) {
+                for (String field : requiredInPropertyOrder(schema)) {
+                    values.put(field, single(sample(schema.getProperties().get(field), field, 1)));
+                }
+            }
+            return values;
+        }
+        values.put(p.getName(), single(value));
+        return values;
+    }
+
+    private static boolean isObject(Schema<?> schema) {
+        return schema != null && "object".equals(type(schema));
+    }
+
+    private static Object single(Object value) {
+        return value instanceof List<?> list ? (list.isEmpty() ? null : list.get(0)) : value;
+    }
+
     private static ObjectNode baseTest(String name, String path, String method, List<Parameter> params, List<String> tags) {
         ObjectNode test = JSON.objectNode();
         test.put("name", name);
@@ -181,7 +211,7 @@ public final class OpenApiTestGenerator {
             switch (p.getIn() == null ? "" : p.getIn()) {
                 case "path" -> pathParams.put(p.getName(), value);
                 case "query" -> {
-                    if (Boolean.TRUE.equals(p.getRequired())) queryParams.put(p.getName(), value);
+                    if (Boolean.TRUE.equals(p.getRequired())) queryParams.putAll(queryValues(p, value));
                 }
                 case "header" -> {
                     if (Boolean.TRUE.equals(p.getRequired())) headers.put(p.getName(), String.valueOf(value));

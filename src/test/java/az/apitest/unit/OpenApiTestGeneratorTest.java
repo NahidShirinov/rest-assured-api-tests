@@ -40,7 +40,9 @@ public class OpenApiTestGeneratorTest {
                 "Create user: 'email' olmadan -> 400",
                 "Get user",
                 "getJob",
-                "getJob: 'verbose' parametri olmadan -> 400"));
+                "getJob: 'verbose' parametri olmadan -> 400",
+                "listOrders",
+                "listOrders: 'tags' parametri olmadan -> 400"));
         assertTrue(suite.get("openapi").asBoolean());
     }
 
@@ -67,11 +69,20 @@ public class OpenApiTestGeneratorTest {
     }
 
     @Test
+    public void objectQueryParamsAreFlattenedAndArraysSendOneValue() {
+        JsonNode list = generate().get("tests").get(6);
+        // pageable (heç bir məcburi sahə yox) göndərilmir, filter -> yalnız məcburi status, tags -> bir dəyər
+        assertEquals(list.get("queryParams").toString(), "{\"status\":\"NEW\",\"tags\":\"urgent\"}");
+        // obyekt parametrləri üçün "olmadan -> 400" testi yaranmır (Spring onları default ilə doldurur)
+        assertTrue(names(generate()).stream().noneMatch(n -> n.contains("'pageable'") || n.contains("'filter'")));
+    }
+
+    @Test
     public void generatedFileIsValidAndLoadable() throws Exception {
         Path out = Files.createTempFile("generated", ".json");
         Files.writeString(out, generate().toPrettyString());
         assertThat(Files.readString(out), matchesJsonSchemaInClasspath("api-test.schema.json"));
-        assertEquals(SuiteLoader.read(out).tests.size(), 6);
+        assertEquals(SuiteLoader.read(out).tests.size(), 8);
         Files.delete(out);
     }
 }
